@@ -7,8 +7,15 @@
     <PackageId>RevitExtensions</PackageId>
     <Authors>RevitExtensions</Authors>
     <PackageTags>Revit;API;Extensions</PackageTags>
-    <!-- Default Revit API package version; overridden during packaging -->
+    <!-- Default Revit API package versions; overridden when packaging -->
     <RevitApiPackageVersion>2026.0.0</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(TargetFramework)' == 'net48'">2024.2.0</RevitApiPackageVersion>
+    <!-- Default values that can be overridden when packaging -->
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <RevitYear>2026</RevitYear>
+    <!-- Assembly name includes Revit year and assembly version -->
+    <AssemblyName>RevitExtensions.$(RevitYear).$(AssemblyVersion)</AssemblyName>
+    <Version>$(AssemblyVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(UseRevitApiStubs)' == 'true'">

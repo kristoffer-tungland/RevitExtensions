@@ -4,8 +4,21 @@ This repository contains helper extensions for the Autodesk Revit API. The goal 
 
 ## Building packages
 
-Run `./pack.sh` to build NuGet packages for Revit versions 2019 through 2026.
-Packages will be written to the `nupkgs` directory.
+Run `./build.sh` to compile the library for all supported Revit versions.
+To produce NuGet packages run `./pack.sh`. Packages will be written to the
+`nupkgs` directory. Pass a version as the first argument to override the default
+`0.0.1`. The CI workflow uses GitVersion to calculate a semantic version and
+forwards it to the script when publishing packages.
+
+Packages use an assembly name that includes the Revit year and the package
+version. For example a package built for Revit 2025 will produce an assembly
+named `RevitExtensions.2025.0.0.1` when the version is `0.0.1`.
+Each NuGet package is published with an id that also includes the Revit year,
+such as `RevitExtensions.2024`, and the package version matches the assembly
+version (`0.0.1` by default).
+
+The project file selects a default Revit API package that matches each target
+framework so a plain `dotnet restore` succeeds without extra properties.
 
 ## Running tests
 
