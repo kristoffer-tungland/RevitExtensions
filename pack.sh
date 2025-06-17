@@ -7,7 +7,14 @@ OUTPUT=$(pwd)/nupkgs
 mkdir -p "$OUTPUT"
 
 package_version=${1:-0.0.1}
-assembly_version=${package_version//+/.}
+# AssemblyVersion must be numeric. Strip any pre-release tag and ensure
+# four version components.
+version_core=${package_version%%[-+]*}
+IFS='.' read -r -a parts <<< "$version_core"
+while [ ${#parts[@]} -lt 4 ]; do
+  parts+=(0)
+done
+assembly_version="${parts[0]}.${parts[1]}.${parts[2]}.${parts[3]}"
 
 for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
   if [ "$year" -ge 2025 ]; then

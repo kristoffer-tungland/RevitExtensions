@@ -2,6 +2,16 @@
 set -e
 set -x
 
+package_version=${1:-0.0.1}
+# AssemblyVersion must be numeric. Strip any pre-release tag and ensure
+# four version components.
+version_core=${package_version%%[-+]*}
+IFS='.' read -r -a parts <<< "$version_core"
+while [ ${#parts[@]} -lt 4 ]; do
+  parts+=(0)
+done
+assembly_version="${parts[0]}.${parts[1]}.${parts[2]}.${parts[3]}"
+
 for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
   if [ "$year" -ge 2025 ]; then
     tf=net8.0
@@ -43,5 +53,6 @@ for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
     -p:DefineConstants=${encoded_defs} \
     -p:RevitApiPackageVersion=${api_ver} \
     -p:UseRevitApiStubs=false \
-    -p:RevitYear=${year}
+    -p:RevitYear=${year} \
+    -p:AssemblyVersion=${assembly_version}
 done
