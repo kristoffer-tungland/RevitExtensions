@@ -17,6 +17,9 @@ Each NuGet package is published with an id that also includes the Revit year,
 such as `RevitExtensions.2024`, and the package version matches the assembly
 version (`0.0.1` by default).
 
+The project file selects a default Revit API package that matches each target
+framework so a plain `dotnet restore` succeeds without extra properties.
+
 ## Running tests
 
 The test project uses the `RevitApiStubs` library so no Autodesk binaries are
