@@ -1,10 +1,11 @@
+---
 name: build
 
-on:
+"on":
   pull_request:
-    branches: [ master ]
+    branches: [master]
   push:
-    branches: [ master ]
+    branches: [master]
 
 permissions:
   contents: read
@@ -35,9 +36,15 @@ jobs:
         run: dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 
   publish:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     needs: build
     runs-on: ubuntu-latest
+    env:
+      GH_FEED: >
+        https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
     steps:
       - uses: actions/checkout@v3
         with:
@@ -57,7 +64,7 @@ jobs:
       - name: Publish to GitHub Packages
         run: |
           dotnet nuget push nupkgs/**/*.nupkg \
-            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --source "$GH_FEED" \
             --api-key ${{ secrets.GITHUB_TOKEN }} \
             --skip-duplicate
       - name: Publish to nuget.org
