@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Helper extensions for Autodesk Revit API.</Description>
+    <PackageId>RevitExtensions</PackageId>
+    <Authors>RevitExtensions</Authors>
+    <PackageTags>Revit;API;Extensions</PackageTags>
+    <!-- Default Revit API package version; overridden during packaging -->
+    <RevitApiPackageVersion>2026.0.0</RevitApiPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseRevitApiStubs)' == 'true'">
+    <ProjectReference Include="..\RevitApiStubs\RevitApiStubs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseRevitApiStubs)' != 'true'">
+    <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(RevitApiPackageVersion)" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
