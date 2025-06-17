@@ -2,6 +2,9 @@
 set -e
 set -x
 
+package_version=${1:-0.0.1}
+assembly_version=${package_version//+/.}
+
 for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
   if [ "$year" -ge 2025 ]; then
     tf=net8.0
@@ -43,5 +46,6 @@ for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
     -p:DefineConstants=${encoded_defs} \
     -p:RevitApiPackageVersion=${api_ver} \
     -p:UseRevitApiStubs=false \
-    -p:RevitYear=${year}
+    -p:RevitYear=${year} \
+    -p:AssemblyVersion=${assembly_version}
 done

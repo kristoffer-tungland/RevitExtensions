@@ -6,6 +6,10 @@ on:
   push:
     branches: [ master ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,15 +20,22 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3
+        with:
+          versionSpec: '5.x'
+      - name: Determine version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3
       - name: Restore
         run: dotnet restore RevitExtensions.sln
       - name: Build all versions
-        run: ./build.sh
+        run: ./build.sh ${{ steps.gitversion.outputs.fullSemVer }}
       - name: Test
         run: dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -43,5 +54,16 @@ jobs:
         uses: gittools/actions/gitversion/execute@v3
       - name: Build packages
         run: ./pack.sh ${{ steps.gitversion.outputs.fullSemVer }}
-      - name: Publish packages
-        run: dotnet nuget push nupkgs/**/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+      - name: Publish to GitHub Packages
+        run: |
+          dotnet nuget push nupkgs/**/*.nupkg \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --skip-duplicate
+      - name: Publish to nuget.org
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          dotnet nuget push nupkgs/**/*.nupkg \
+            --source "https://api.nuget.org/v3/index.json" \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --skip-duplicate
