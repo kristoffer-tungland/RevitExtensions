@@ -2,12 +2,6 @@
 set -e
 set -x
 
-
-OUTPUT=$(pwd)/nupkgs
-mkdir -p "$OUTPUT"
-
-assembly_version=${1:-0.0.1}
-
 for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
   if [ "$year" -ge 2025 ]; then
     tf=net8.0
@@ -26,7 +20,6 @@ for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
     2026) api_ver=2026.0.0 ;;
   esac
 
-  # build define constants
   defines="REVIT${year}"
   for y in {2019..2026}; do
     if [ "$year" -ge "$y" ]; then
@@ -50,20 +43,5 @@ for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
     -p:DefineConstants=${encoded_defs} \
     -p:RevitApiPackageVersion=${api_ver} \
     -p:UseRevitApiStubs=false \
-    -p:RevitYear=${year} \
-    -p:AssemblyVersion=${assembly_version}
-
-  dotnet msbuild RevitExtensions/RevitExtensions.csproj -t:pack \
-    -p:NoBuild=true \
-    -p:TargetFrameworks=${tf} \
-    -p:Configuration=Release \
-    -p:PackageVersion=${assembly_version} \
-    -p:PackageId=RevitExtensions.${year} \
-    -p:PackageOutputPath="$OUTPUT" \
-    -p:TargetFramework=${tf} \
-    -p:DefineConstants=${encoded_defs} \
-    -p:RevitApiPackageVersion=${api_ver} \
-    -p:UseRevitApiStubs=false \
-    -p:RevitYear=${year} \
-    -p:AssemblyVersion=${assembly_version}
+    -p:RevitYear=${year}
 done

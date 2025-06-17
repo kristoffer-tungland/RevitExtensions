@@ -9,6 +9,12 @@
     <PackageTags>Revit;API;Extensions</PackageTags>
     <!-- Default Revit API package version; overridden during packaging -->
     <RevitApiPackageVersion>2026.0.0</RevitApiPackageVersion>
+    <!-- Default values that can be overridden when packaging -->
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <RevitYear>2026</RevitYear>
+    <!-- Assembly name includes Revit year and assembly version -->
+    <AssemblyName>RevitExtensions.$(RevitYear).$(AssemblyVersion)</AssemblyName>
+    <Version>$(AssemblyVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(UseRevitApiStubs)' == 'true'">
