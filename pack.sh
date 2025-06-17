@@ -6,7 +6,8 @@ set -x
 OUTPUT=$(pwd)/nupkgs
 mkdir -p "$OUTPUT"
 
-assembly_version=${1:-0.0.1}
+package_version=${1:-0.0.1}
+assembly_version=${package_version//+/.}
 
 for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
   if [ "$year" -ge 2025 ]; then
@@ -57,7 +58,7 @@ for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
     -p:NoBuild=true \
     -p:TargetFrameworks=${tf} \
     -p:Configuration=Release \
-    -p:PackageVersion=${assembly_version} \
+    -p:PackageVersion=${package_version} \
     -p:PackageId=RevitExtensions.${year} \
     -p:PackageOutputPath="$OUTPUT" \
     -p:TargetFramework=${tf} \
