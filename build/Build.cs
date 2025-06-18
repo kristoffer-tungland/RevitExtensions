@@ -61,6 +61,7 @@ class Build : NukeBuild
             {
                 var tf = GetFramework(year);
                 var defines = BuildDefines(year);
+                var encodedDefs = defines.Replace(";", "%3B");
                 DotNetRestore(s => s
                     .SetProjectFile(Project)
                     .SetProperty("TargetFramework", tf)
@@ -74,7 +75,7 @@ class Build : NukeBuild
                     .SetFramework(tf)
                     .EnableNoRestore()
                     .SetProperty("TargetFrameworks", tf)
-                    .SetProperty("DefineConstants", defines)
+                    .SetProperty("DefineConstants", encodedDefs)
                     .SetProperty("RevitApiPackageVersion", api)
                     .SetProperty("UseRevitApiStubs", "false")
                     .SetProperty("RevitYear", year.ToString())
@@ -90,20 +91,20 @@ class Build : NukeBuild
             {
                 var tf = GetFramework(year);
                 var defines = BuildDefines(year);
-                DotNetPack(s => s
-                    .SetProject(Project)
-                    .SetConfiguration(Configuration.Release)
-                    .SetOutputDirectory(Output)
-                    .EnableNoBuild()
-                    .SetProperty("PackageVersion", PackageVersion)
-                    .SetProperty("PackageId", $"RevitExtensions.{year}")
-                    .SetProperty("TargetFramework", tf)
-                    .SetProperty("TargetFrameworks", tf)
-                    .SetProperty("DefineConstants", defines)
-                    .SetProperty("RevitApiPackageVersion", api)
-                    .SetProperty("UseRevitApiStubs", "false")
-                    .SetProperty("RevitYear", year.ToString())
-                    .SetProperty("AssemblyVersion", GetAssemblyVersion()));
+                var encodedDefs = defines.Replace(";", "%3B");
+                DotNet($"msbuild {Project} -t:pack " +
+                       $"-p:NoBuild=true " +
+                       $"-p:Configuration=Release " +
+                       $"-p:PackageVersion={PackageVersion} " +
+                       $"-p:PackageId=RevitExtensions.{year} " +
+                       $"-p:PackageOutputPath={Output} " +
+                       $"-p:TargetFramework={tf} " +
+                       $"-p:TargetFrameworks={tf} " +
+                       $"-p:DefineConstants={encodedDefs} " +
+                       $"-p:RevitApiPackageVersion={api} " +
+                       $"-p:UseRevitApiStubs=false " +
+                       $"-p:RevitYear={year} " +
+                       $"-p:AssemblyVersion={GetAssemblyVersion()}");
             }
         });
 
