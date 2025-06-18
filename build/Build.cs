@@ -84,7 +84,7 @@ class Build : NukeBuild
         });
 
     Target Pack => _ => _
-        .DependsOn(BuildAll)
+        .DependsOn(Clean)
         .Executes(() =>
         {
             foreach (var (year, api) in RevitVersions)
@@ -92,6 +92,25 @@ class Build : NukeBuild
                 var tf = GetFramework(year);
                 var defines = BuildDefines(year);
                 var encodedDefs = defines.Replace(";", "%3B");
+                DotNetRestore(s => s
+                    .SetProjectFile(Project)
+                    .SetProperty("TargetFramework", tf)
+                    .SetProperty("TargetFrameworks", tf)
+                    .SetProperty("RevitApiPackageVersion", api)
+                    .SetProperty("UseRevitApiStubs", "false"));
+
+                DotNetBuild(s => s
+                    .SetProjectFile(Project)
+                    .SetConfiguration(Configuration.Release)
+                    .SetFramework(tf)
+                    .EnableNoRestore()
+                    .SetProperty("TargetFrameworks", tf)
+                    .SetProperty("DefineConstants", encodedDefs)
+                    .SetProperty("RevitApiPackageVersion", api)
+                    .SetProperty("UseRevitApiStubs", "false")
+                    .SetProperty("RevitYear", year.ToString())
+                    .SetProperty("AssemblyVersion", GetAssemblyVersion()));
+
                 DotNet($"msbuild {Project} -t:pack " +
                        $"-p:NoBuild=true " +
                        $"-p:Configuration=Release " +
