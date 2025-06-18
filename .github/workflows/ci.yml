@@ -39,8 +39,6 @@ jobs:
           else
             echo "value=${{ steps.gitversion.outputs.fullSemVer }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Install Nuke
-        run: dotnet tool install Nuke.GlobalTool --global
       - name: Run build and publish
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
@@ -49,4 +47,4 @@ jobs:
           if [ "${{ github.ref }}" = 'refs/heads/master' ]; then
             ARGS="$ARGS --nugetkey \"$NUGET_API_KEY\""
           fi
-          nuke $ARGS
+          ./build.sh $ARGS
