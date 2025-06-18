@@ -6,6 +6,7 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using System.IO;
 
 class Build : NukeBuild
 {
@@ -45,7 +46,12 @@ class Build : NukeBuild
     }
 
     Target Clean => _ => _
-        .Executes(() => { EnsureCleanDirectory(Output); });
+        .Executes(() =>
+        {
+            if (Directory.Exists(Output))
+                Directory.Delete(Output, true);
+            Directory.CreateDirectory(Output);
+        });
 
     Target BuildAll => _ => _
         .DependsOn(Clean)
@@ -55,13 +61,15 @@ class Build : NukeBuild
             {
                 var tf = GetFramework(year);
                 var defines = BuildDefines(year);
-                DotNetRestore(Project, s => s
+                DotNetRestore(s => s
+                    .SetProjectFile(Project)
                     .SetProperty("TargetFramework", tf)
                     .SetProperty("TargetFrameworks", tf)
                     .SetProperty("RevitApiPackageVersion", api)
                     .SetProperty("UseRevitApiStubs", "false"));
 
-                DotNetBuild(Project, s => s
+                DotNetBuild(s => s
+                    .SetProjectFile(Project)
                     .SetConfiguration(Configuration.Release)
                     .SetFramework(tf)
                     .EnableNoRestore()
@@ -82,10 +90,11 @@ class Build : NukeBuild
             {
                 var tf = GetFramework(year);
                 var defines = BuildDefines(year);
-                DotNetPack(Project, s => s
+                DotNetPack(s => s
+                    .SetProject(Project)
                     .SetConfiguration(Configuration.Release)
                     .SetOutputDirectory(Output)
-                    .SetNoBuild(true)
+                    .EnableNoBuild()
                     .SetProperty("PackageVersion", PackageVersion)
                     .SetProperty("PackageId", $"RevitExtensions.{year}")
                     .SetProperty("TargetFramework", tf)
@@ -101,7 +110,8 @@ class Build : NukeBuild
     Target Test => _ => _
         .Executes(() =>
         {
-            DotNetTest(RootDirectory / "RevitExtensions.sln", s => s
+            DotNetTest(s => s
+                .SetProjectFile(RootDirectory / "RevitExtensions.sln")
                 .SetConfiguration(Configuration.Release)
                 .SetProperty("UseRevitApiStubs", "true"));
         });
@@ -110,19 +120,24 @@ class Build : NukeBuild
         .DependsOn(Pack, Test)
         .Executes(() =>
         {
-            if (!string.IsNullOrEmpty(GitHubFeed) && !string.IsNullOrEmpty(GitHubToken))
+            foreach (var package in Directory.GetFiles(Output, "*.nupkg"))
             {
-                DotNetNuGetPush(Output / "**/*.nupkg", s => s
-                    .SetSource(GitHubFeed)
-                    .SetApiKey(GitHubToken)
-                    .EnableSkipDuplicate());
-            }
-            if (!string.IsNullOrEmpty(NuGetApiKey))
-            {
-                DotNetNuGetPush(Output / "**/*.nupkg", s => s
-                    .SetSource("https://api.nuget.org/v3/index.json")
-                    .SetApiKey(NuGetApiKey)
-                    .EnableSkipDuplicate());
+                if (!string.IsNullOrEmpty(GitHubFeed) && !string.IsNullOrEmpty(GitHubToken))
+                {
+                    DotNetNuGetPush(s => s
+                        .SetTargetPath(package)
+                        .SetSource(GitHubFeed)
+                        .SetApiKey(GitHubToken)
+                        .EnableSkipDuplicate());
+                }
+                if (!string.IsNullOrEmpty(NuGetApiKey))
+                {
+                    DotNetNuGetPush(s => s
+                        .SetTargetPath(package)
+                        .SetSource("https://api.nuget.org/v3/index.json")
+                        .SetApiKey(NuGetApiKey)
+                        .EnableSkipDuplicate());
+                }
             }
         });
 
