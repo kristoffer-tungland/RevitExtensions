@@ -6,7 +6,7 @@ name: build
     branches: [master]
   push:
     branches: [master]
-  workflow_dispatch:
+    tags: ['v*']
 
 permissions:
   contents: read
@@ -29,15 +29,23 @@ jobs:
       - name: Determine version
         id: gitversion
         uses: gittools/actions/gitversion/execute@v3
+      - name: Select package version
+        id: pkgver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ steps.gitversion.outputs.fullSemVer }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore
         run: dotnet restore RevitExtensions.sln
       - name: Build all versions
-        run: ./build.sh ${{ steps.gitversion.outputs.fullSemVer }}
+        run: ./build.sh ${{ steps.pkgver.outputs.value }}
       - name: Test
         run: dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 
   publish:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-latest
     env:
@@ -57,8 +65,16 @@ jobs:
       - name: Determine version
         id: gitversion
         uses: gittools/actions/gitversion/execute@v3
+      - name: Select package version
+        id: pkgver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ steps.gitversion.outputs.fullSemVer }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build packages
-        run: ./pack.sh ${{ steps.gitversion.outputs.fullSemVer }}
+        run: ./pack.sh ${{ steps.pkgver.outputs.value }}
       - name: Publish to GitHub Packages
         run: |
           dotnet nuget push nupkgs/**/*.nupkg \
