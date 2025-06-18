@@ -4,11 +4,12 @@ This repository contains helper extensions for the Autodesk Revit API. The goal 
 
 ## Building packages
 
-Run `./build.sh` to compile the library for all supported Revit versions.
-To produce NuGet packages run `./pack.sh`. Packages will be written to the
-`nupkgs` directory. Pass a version as the first argument to override the default
-`0.0.1`. The CI workflow uses GitVersion to calculate a semantic version and
-forwards it to the script when publishing packages.
+Use [NUKE](https://nuke.build) to build and package the project. Compile all
+versions with `nuke --target BuildAll` and produce NuGet packages with
+`nuke --target Pack`. Packages will be written to the `nupkgs` directory. Pass a
+`version` parameter to override the default `0.0.1`, for example
+`nuke Pack --version 1.2.3`. The CI workflow uses GitVersion to calculate a
+semantic version and forwards it to the build when publishing packages.
 
 Packages use an assembly name that includes the Revit year and the package
 version. For example a package built for Revit 2025 will produce an assembly

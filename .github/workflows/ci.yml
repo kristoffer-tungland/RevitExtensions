@@ -1,7 +1,7 @@
 ---
 name: build
 
-"on":
+on:
   pull_request:
     branches: [master]
   push:
@@ -13,44 +13,10 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3
-        with:
-          versionSpec: '5.x'
-      - name: Determine version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v3
-      - name: Select package version
-        id: pkgver
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${{ steps.gitversion.outputs.fullSemVer }}" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Restore
-        run: dotnet restore RevitExtensions.sln
-      - name: Build all versions
-        run: ./build.sh ${{ steps.pkgver.outputs.value }}
-      - name: Test
-        run: dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
-
-  publish:
-    if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/')
-    needs: build
+  ci:
     runs-on: ubuntu-latest
     env:
-      GH_FEED: >-
-        https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+      GH_FEED: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
     steps:
       - uses: actions/checkout@v3
         with:
@@ -73,18 +39,14 @@ jobs:
           else
             echo "value=${{ steps.gitversion.outputs.fullSemVer }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Build packages
-        run: ./pack.sh ${{ steps.pkgver.outputs.value }}
-      - name: Publish to GitHub Packages
+      - name: Install Nuke
+        run: dotnet tool install Nuke.GlobalTool --global
+      - name: Run build and publish
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push nupkgs/**/*.nupkg \
-            --source "$GH_FEED" \
-            --api-key ${{ secrets.GITHUB_TOKEN }} \
-            --skip-duplicate
-      - name: Publish to nuget.org
-        if: github.ref == 'refs/heads/master'
-        run: |
-          dotnet nuget push nupkgs/**/*.nupkg \
-            --source "https://api.nuget.org/v3/index.json" \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
-            --skip-duplicate
+          ARGS="--target Publish --version ${{ steps.pkgver.outputs.value }} --ghfeed \"$GH_FEED\" --ghtoken \"${{ secrets.GITHUB_TOKEN }}\""
+          if [ "${{ github.ref }}" = 'refs/heads/master' ]; then
+            ARGS="$ARGS --nugetkey \"$NUGET_API_KEY\""
+          fi
+          nuke $ARGS
