@@ -37,7 +37,7 @@ jobs:
         run: dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 
   publish:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     env:
