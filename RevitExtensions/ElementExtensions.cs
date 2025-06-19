@@ -79,5 +79,23 @@ namespace RevitExtensions
                     return false;
             }
         }
+
+        /// <summary>
+        /// Retrieves the element type for the given element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <returns>The element type or null if unavailable.</returns>
+        public static Element GetElementType(this Element element)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+
+            var document = element.Document;
+            if (document == null) return null;
+
+            var typeId = element.GetTypeId();
+            if (typeId == null) return null;
+
+            return document.GetElement(typeId);
+        }
     }
 }

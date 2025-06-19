@@ -24,6 +24,8 @@ namespace Autodesk.Revit.DB
     {
         public ElementId Id { get; }
         public Document Document { get; }
+        public ElementId TypeId { get; set; }
+        public ParameterSet Parameters { get; } = new ParameterSet();
 
         /// <summary>
         /// Gets a value indicating whether <see cref="Dispose"/> has been called.
@@ -32,11 +34,22 @@ namespace Autodesk.Revit.DB
 
         public Element(ElementId id) : this(null, id) { }
 
+
         public Element(Document document, ElementId id)
         {
             Document = document;
             Id = id;
         }
+
+        public ElementId GetTypeId() => TypeId;
+
+        public Parameter get_Parameter(BuiltInParameter parameter) => new Parameter(parameter);
+
+        public Parameter get_Parameter(ElementId id) => new Parameter(id);
+
+        public Parameter get_Parameter(Guid guid) => new Parameter(guid);
+
+        public Parameter LookupParameter(string name) => new Parameter(name);
 
         /// <summary>
         /// Disposes the element. In the stubs this simply sets <see cref="IsDisposed"/>.
@@ -54,6 +67,7 @@ namespace Autodesk.Revit.DB
         public string CurrentUser { get; set; }
 
         private readonly System.Collections.Generic.Dictionary<ElementId, string> _owners = new System.Collections.Generic.Dictionary<ElementId, string>();
+        private readonly System.Collections.Generic.Dictionary<long, Element> _elements = new System.Collections.Generic.Dictionary<long, Element>();
 
         public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
 
@@ -65,6 +79,30 @@ namespace Autodesk.Revit.DB
         public CheckoutStatus GetCheckoutStatus(ElementId elementId)
         {
             return WorksharingUtils.GetCheckoutStatus(this, elementId);
+        }
+
+        private static long GetIdValue(ElementId id)
+        {
+#if REVIT2024_OR_ABOVE
+            return id.Value;
+#else
+            return id.IntegerValue;
+#endif
+        }
+
+        public void AddElement(Element element)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            _elements[GetIdValue(element.Id)] = element;
+        }
+
+        public Element GetElement(ElementId id)
+        {
+            if (_elements.TryGetValue(GetIdValue(id), out var element))
+            {
+                return element;
+            }
+            return new Element(this, id);
         }
     }
 
@@ -197,4 +235,27 @@ namespace Autodesk.Revit.DB
             Categories = categories;
         }
     }
+
+    public enum BuiltInParameter { }
+
+    public class Parameter : IDisposable
+    {
+        public BuiltInParameter? BuiltInParameter { get; }
+        public ElementId Id { get; }
+        public Guid? Guid { get; }
+        public string Name { get; }
+        public bool IsDisposed { get; private set; }
+
+        public Parameter(BuiltInParameter bip) => BuiltInParameter = bip;
+        public Parameter(ElementId id) => Id = id;
+        public Parameter(Guid guid) => Guid = guid;
+        public Parameter(string name) => Name = name;
+
+        public void Dispose() => IsDisposed = true;
+    }
+
+    public class ParameterSet : System.Collections.Generic.List<Parameter>
+    {
+    }
+
 }
