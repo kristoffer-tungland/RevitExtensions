@@ -34,5 +34,50 @@ namespace RevitExtensions
             return id.IntegerValue;
 #endif
         }
+
+        /// <summary>
+        /// Determines if the element can be edited.
+        /// </summary>
+        /// <param name="element">The element to check.</param>
+        /// <returns>True if the element can be edited.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> is null.</exception>
+        public static bool CanEdit(this Element element)
+        {
+            return element.CanEdit(out _);
+        }
+
+        /// <summary>
+        /// Determines if the element can be edited.
+        /// </summary>
+        /// <param name="element">The element to check.</param>
+        /// <param name="status">Outputs the edit status.</param>
+        /// <returns>True if the element can be edited.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> is null.</exception>
+        public static bool CanEdit(this Element element, out EditStatus status)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+
+            var document = element.Document;
+            if (document == null || !document.IsWorkshared)
+            {
+                status = EditStatus.NotWorkshared;
+                return true;
+            }
+
+            var checkout = WorksharingUtils.GetCheckoutStatus(document, element.Id);
+
+            switch (checkout)
+            {
+                case CheckoutStatus.OwnedByCurrentUser:
+                    status = EditStatus.OwnedByCurrentUser;
+                    return true;
+                case CheckoutStatus.NotOwned:
+                    status = EditStatus.Editable;
+                    return true;
+                default:
+                    status = EditStatus.OwnedByOtherUser;
+                    return false;
+            }
+        }
     }
 }
