@@ -72,5 +72,26 @@ namespace RevitExtensions.Tests
             Assert.False(result);
             Assert.Equal(EditStatus.OwnedByOtherUser, status);
         }
+
+        [Fact]
+        public void GetElementType_ReturnsTypeElement()
+        {
+            var doc = new Document();
+            var type = new Element(doc, new ElementId(10));
+            doc.AddElement(type);
+
+            var element = new Element(doc, new ElementId(1)) { TypeId = new ElementId(10) };
+
+            using var result = element.GetElementType();
+            Assert.Same(type, result);
+        }
+
+        [Fact]
+        public void GetElementType_NoDocument_ReturnsNull()
+        {
+            var element = new Element(new ElementId(2)) { TypeId = new ElementId(99) };
+            using var type = element.GetElementType();
+            Assert.Null(type);
+        }
     }
 }

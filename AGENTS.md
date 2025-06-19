@@ -17,3 +17,8 @@ dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 ```
 
 The stubs only support the surface area covered by the tests and should not be used in production code.
+
+## Coding style
+Use `using var` with elements, parameters, and any other `IDisposable` objects when they are only used temporarily and not returned from the method.
+
+To account for API differences across Revit versions, conditional compilation symbols may be used. Symbols follow the pattern `REVIT20xx`, `REVIT20xx_OR_ABOVE`, and `REVIT20xx_OR_LESS` and can be combined to include or exclude code for specific main releases.
