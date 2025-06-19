@@ -1,58 +1,74 @@
 #!/usr/bin/env bash
-set -e
-set -x
 
-package_version=${1:-0.0.1}
-# AssemblyVersion must be numeric. Strip any pre-release tag and ensure
-# four version components.
-version_core=${package_version%%[-+]*}
-IFS='.' read -r -a parts <<< "$version_core"
-while [ ${#parts[@]} -lt 4 ]; do
-  parts+=(0)
-done
-assembly_version="${parts[0]}.${parts[1]}.${parts[2]}.${parts[3]}"
+bash --version 2>&1 | head -n 1
 
-for year in 2019 2020 2021 2022 2023 2024 2025 2026; do
-  if [ "$year" -ge 2025 ]; then
-    tf=net8.0
-  else
-    tf=net48
-  fi
+set -eo pipefail
+SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
-  case $year in
-    2019) api_ver=2019.0.1 ;;
-    2020) api_ver=2020.0.1 ;;
-    2021) api_ver=2021.1.9 ;;
-    2022) api_ver=2022.1.0 ;;
-    2023) api_ver=2023.0.0 ;;
-    2024) api_ver=2024.2.0 ;;
-    2025) api_ver=2025.0.0 ;;
-    2026) api_ver=2026.0.0 ;;
-  esac
+###########################################################################
+# CONFIGURATION
+###########################################################################
 
-  defines="REVIT${year}"
-  for y in {2019..2026}; do
-    if [ "$year" -ge "$y" ]; then
-      defines+=";REVIT${y}_OR_ABOVE"
+BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build.csproj"
+TEMP_DIRECTORY="$SCRIPT_DIR/.nuke/temp"
+
+DOTNET_GLOBAL_FILE="$SCRIPT_DIR/global.json"
+DOTNET_INSTALL_URL="https://dot.net/v1/dotnet-install.sh"
+DOTNET_CHANNEL="STS"
+
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
+export DOTNET_ROLL_FORWARD="Major"
+export NUKE_TELEMETRY_OPTOUT=1
+
+###########################################################################
+# EXECUTION
+###########################################################################
+
+function FirstJsonValue {
+    perl -nle 'print $1 if m{"'$1'": "([^"]+)",?}' <<< "${@:2}"
+}
+
+# Print environment variables
+# WARNING: Make sure that secrets are actually scrambled in build log
+# env | sort
+
+# Check if any dotnet is installed
+if [[ -x "$(command -v dotnet)" ]]; then
+    dotnet --info
+fi
+
+# If dotnet CLI is installed globally and it matches requested version, use for execution
+if [ -x "$(command -v dotnet)" ] && dotnet --version &>/dev/null; then
+    export DOTNET_EXE="$(command -v dotnet)"
+else
+    # Download install script
+    DOTNET_INSTALL_FILE="$TEMP_DIRECTORY/dotnet-install.sh"
+    mkdir -p "$TEMP_DIRECTORY"
+    curl -Lsfo "$DOTNET_INSTALL_FILE" "$DOTNET_INSTALL_URL"
+    chmod +x "$DOTNET_INSTALL_FILE"
+
+    # If global.json exists, load expected version
+    if [[ -f "$DOTNET_GLOBAL_FILE" ]]; then
+        DOTNET_VERSION=$(FirstJsonValue "version" "$(cat "$DOTNET_GLOBAL_FILE")")
+        if [[ "$DOTNET_VERSION" == ""  ]]; then
+            unset DOTNET_VERSION
+        fi
     fi
-    if [ "$year" -le "$y" ]; then
-      defines+=";REVIT${y}_OR_LESS"
+
+    # Install by channel or version
+    DOTNET_DIRECTORY="$TEMP_DIRECTORY/dotnet-unix"
+    if [[ -z ${DOTNET_VERSION+x} ]]; then
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --channel "$DOTNET_CHANNEL" --no-path
+    else
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --version "$DOTNET_VERSION" --no-path
     fi
-  done
+    export DOTNET_EXE="$DOTNET_DIRECTORY/dotnet"
+    export PATH="$DOTNET_DIRECTORY:$PATH"
+fi
 
-  encoded_defs=${defines//;/\%3B}
+echo "Microsoft (R) .NET SDK version $("$DOTNET_EXE" --version)"
 
-  dotnet restore RevitExtensions/RevitExtensions.csproj \
-    -p:TargetFramework=${tf} \
-    -p:TargetFrameworks=${tf} \
-    -p:RevitApiPackageVersion=${api_ver} \
-    -p:UseRevitApiStubs=false
+"$DOTNET_EXE" build "$BUILD_PROJECT_FILE" /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary
+"$DOTNET_EXE" run --project "$BUILD_PROJECT_FILE" --no-build -- "$@"
 
-  dotnet build RevitExtensions/RevitExtensions.csproj -c Release -f ${tf} --no-restore \
-    -p:TargetFrameworks=${tf} \
-    -p:DefineConstants=${encoded_defs} \
-    -p:RevitApiPackageVersion=${api_ver} \
-    -p:UseRevitApiStubs=false \
-    -p:RevitYear=${year} \
-    -p:AssemblyVersion=${assembly_version}
-done
