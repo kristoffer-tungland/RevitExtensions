@@ -23,13 +23,20 @@ namespace Autodesk.Revit.DB
     public class Element : IDisposable
     {
         public ElementId Id { get; }
+        public Document Document { get; }
 
         /// <summary>
         /// Gets a value indicating whether <see cref="Dispose"/> has been called.
         /// </summary>
         public bool IsDisposed { get; private set; }
 
-        public Element(ElementId id) => Id = id;
+        public Element(ElementId id) : this(null, id) { }
+
+        public Element(Document document, ElementId id)
+        {
+            Document = document;
+            Id = id;
+        }
 
         /// <summary>
         /// Disposes the element. In the stubs this simply sets <see cref="IsDisposed"/>.
@@ -39,8 +46,36 @@ namespace Autodesk.Revit.DB
 
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.Document.
+    /// Provides simple worksharing ownership tracking used in tests.
     /// </summary>
-    public class Document { }
+    public class Document
+    {
+        public bool IsWorkshared { get; set; }
+        public string CurrentUser { get; set; }
+
+        private readonly System.Collections.Generic.Dictionary<ElementId, string> _owners = new System.Collections.Generic.Dictionary<ElementId, string>();
+
+        public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
+
+        public string GetElementOwner(ElementId id)
+        {
+            return _owners.TryGetValue(id, out var owner) ? owner : null;
+        }
+
+        public CheckoutStatus GetCheckoutStatus(ElementId elementId)
+        {
+            var owner = GetElementOwner(elementId);
+            if (string.IsNullOrEmpty(owner)) return CheckoutStatus.NotOwned;
+            return owner == CurrentUser ? CheckoutStatus.OwnedByCurrentUser : CheckoutStatus.OwnedByOtherUser;
+        }
+    }
+
+    public enum CheckoutStatus
+    {
+        OwnedByCurrentUser,
+        OwnedByOtherUser,
+        NotOwned,
+    }
 
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.FilteredElementCollector capturing
