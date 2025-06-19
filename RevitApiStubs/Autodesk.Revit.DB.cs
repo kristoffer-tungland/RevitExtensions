@@ -53,6 +53,7 @@ namespace Autodesk.Revit.DB
         public BuiltInCategory? Category { get; private set; }
         public System.Collections.Generic.IList<BuiltInCategory> Categories { get; private set; }
         public bool ExcludesElementTypes { get; private set; }
+        public bool OnlyElementTypes { get; private set; }
 
         private readonly System.Collections.Generic.List<Element> _elements = new System.Collections.Generic.List<Element>();
 
@@ -88,6 +89,14 @@ namespace Autodesk.Revit.DB
         public FilteredElementCollector WhereElementIsNotElementType()
         {
             ExcludesElementTypes = true;
+            OnlyElementTypes = false;
+            return this;
+        }
+
+        public FilteredElementCollector WhereElementIsElementType()
+        {
+            OnlyElementTypes = true;
+            ExcludesElementTypes = false;
             return this;
         }
     }

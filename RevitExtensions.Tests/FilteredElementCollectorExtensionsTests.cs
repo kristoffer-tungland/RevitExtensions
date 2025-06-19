@@ -38,5 +38,18 @@ namespace RevitExtensions.Tests
             Assert.Equal(cats, collector.Categories);
             Assert.True(collector.ExcludesElementTypes);
         }
+
+        [Fact]
+        public void TypesOf_MultiCategories_FiltersCollector()
+        {
+            var doc = new Document();
+            var cats = new[] { BuiltInCategory.GenericModel, BuiltInCategory.GenericModel };
+            var collector = new FilteredElementCollector(doc)
+                .TypesOf(cats);
+
+            Assert.Equal(cats, collector.Categories);
+            Assert.True(collector.OnlyElementTypes);
+        }
     }
 }
+
