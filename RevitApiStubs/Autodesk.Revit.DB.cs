@@ -64,9 +64,23 @@ namespace Autodesk.Revit.DB
 
         public CheckoutStatus GetCheckoutStatus(ElementId elementId)
         {
-            var owner = GetElementOwner(elementId);
+            return WorksharingUtils.GetCheckoutStatus(this, elementId);
+        }
+    }
+
+    /// <summary>
+    /// Provides helper methods for worksharing related functionality.
+    /// </summary>
+    public static class WorksharingUtils
+    {
+        public static CheckoutStatus GetCheckoutStatus(Document doc, ElementId elementId)
+        {
+            if (doc == null) throw new ArgumentNullException(nameof(doc));
+            if (elementId == null) throw new ArgumentNullException(nameof(elementId));
+
+            var owner = doc.GetElementOwner(elementId);
             if (string.IsNullOrEmpty(owner)) return CheckoutStatus.NotOwned;
-            return owner == CurrentUser ? CheckoutStatus.OwnedByCurrentUser : CheckoutStatus.OwnedByOtherUser;
+            return owner == doc.CurrentUser ? CheckoutStatus.OwnedByCurrentUser : CheckoutStatus.OwnedByOtherUser;
         }
     }
 

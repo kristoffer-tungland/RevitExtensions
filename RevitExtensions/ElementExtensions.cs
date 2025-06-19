@@ -64,7 +64,7 @@ namespace RevitExtensions
                 return true;
             }
 
-            var checkout = document.GetCheckoutStatus(element.Id);
+            var checkout = WorksharingUtils.GetCheckoutStatus(document, element.Id);
 
             switch (checkout)
             {
