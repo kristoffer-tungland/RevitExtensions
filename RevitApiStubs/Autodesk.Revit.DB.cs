@@ -238,6 +238,15 @@ namespace Autodesk.Revit.DB
 
     public enum BuiltInParameter { }
 
+    public enum StorageType
+    {
+        None,
+        Integer,
+        Double,
+        String,
+        ElementId,
+    }
+
     public class Parameter : IDisposable
     {
         public BuiltInParameter? BuiltInParameter { get; }
@@ -245,11 +254,72 @@ namespace Autodesk.Revit.DB
         public Guid? Guid { get; }
         public string Name { get; }
         public bool IsDisposed { get; private set; }
+        public StorageType StorageType { get; set; }
+        public bool IsReadOnly { get; set; }
+
+        private int _intValue;
+        private double _doubleValue;
+        private string _stringValue;
+        private ElementId _elementIdValue;
 
         public Parameter(BuiltInParameter bip) => BuiltInParameter = bip;
         public Parameter(ElementId id) => Id = id;
         public Parameter(Guid guid) => Guid = guid;
         public Parameter(string name) => Name = name;
+
+        public int AsInteger() => _intValue;
+        public double AsDouble() => _doubleValue;
+        public string AsString() => _stringValue;
+        public ElementId AsElementId() => _elementIdValue;
+
+        public bool Set(int value)
+        {
+            if (IsReadOnly) return false;
+            _intValue = value;
+            StorageType = StorageType.Integer;
+            return true;
+        }
+
+        public bool Set(double value)
+        {
+            if (IsReadOnly) return false;
+            _doubleValue = value;
+            StorageType = StorageType.Double;
+            return true;
+        }
+
+        public bool Set(string value)
+        {
+            if (IsReadOnly) return false;
+            _stringValue = value;
+            StorageType = StorageType.String;
+            return true;
+        }
+
+        public bool Set(ElementId value)
+        {
+            if (IsReadOnly) return false;
+            _elementIdValue = value;
+            StorageType = StorageType.ElementId;
+            return true;
+        }
+
+        public bool SetValueString(string value) => Set(value);
+        public string AsValueString()
+        {
+            return StorageType switch
+            {
+                StorageType.Integer => _intValue.ToString(),
+                StorageType.Double => _doubleValue.ToString(),
+                StorageType.String => _stringValue,
+#if REVIT2024_OR_ABOVE
+                StorageType.ElementId => _elementIdValue?.Value.ToString(),
+#else
+                StorageType.ElementId => _elementIdValue?.IntegerValue.ToString(),
+#endif
+                _ => string.Empty,
+            };
+        }
 
         public void Dispose() => IsDisposed = true;
     }

@@ -65,5 +65,115 @@ namespace RevitExtensions.Tests
             Assert.Equal(9L, param.Id.GetElementIdValue());
             Assert.Same(type.Parameters[0], param);
         }
+
+        [Fact]
+        public void GetParameterValue_FromParameter_ReturnsStoredValue()
+        {
+            var parameter = new Parameter("A") { StorageType = StorageType.String };
+            parameter.Set("foo");
+
+            var value = parameter.GetParameterValue();
+
+            Assert.Equal("foo", value);
+        }
+
+        [Fact]
+        public void GetParameterValue_FromElementIdentifier_ReturnsStoredValue()
+        {
+            var element = new Element(new ElementId(1));
+            var parameter = new Parameter(new ElementId(5)) { StorageType = StorageType.Integer };
+            parameter.Set(42);
+            element.Parameters.Add(parameter);
+
+            var value = element.GetParameterValue("5");
+
+            Assert.Equal(42, value);
+        }
+
+        [Fact]
+        public void GetParameterValue_Generic_ConvertsValue()
+        {
+            var parameter = new Parameter("B") { StorageType = StorageType.String };
+            parameter.Set("123");
+
+            var value = parameter.GetParameterValue<int>();
+
+            Assert.Equal(123, value);
+        }
+
+        [Fact]
+        public void Element_GetParameterValue_Generic_ConvertsValue()
+        {
+            var element = new Element(new ElementId(2));
+            var parameter = new Parameter(new ElementId(7)) { StorageType = StorageType.ElementId };
+            parameter.Set(new ElementId(7));
+            element.Parameters.Add(parameter);
+
+            var value = element.GetParameterValue<long>("7");
+
+            Assert.Equal(7L, value);
+        }
+
+        [Fact]
+        public void SetParameterValue_SetsValue()
+        {
+            var parameter = new Parameter("A") { StorageType = StorageType.Double };
+
+            parameter.SetParameterValue(3.5);
+
+            Assert.Equal(3.5, parameter.AsDouble());
+        }
+
+        [Fact]
+        public void TrySetParameterValue_ReadOnly_ReturnsFalseWithReason()
+        {
+            var parameter = new Parameter("A") { StorageType = StorageType.String, IsReadOnly = true };
+
+            var result = parameter.TrySetParameterValue("bar", out var reason);
+
+            Assert.False(result);
+            Assert.Equal("Parameter is read-only.", reason);
+        }
+
+        [Fact]
+        public void SetParameterValue_ReadOnly_Throws()
+        {
+            var parameter = new Parameter("A") { StorageType = StorageType.String, IsReadOnly = true };
+
+            var ex = Assert.Throws<InvalidOperationException>(() => parameter.SetParameterValue("bar"));
+            Assert.Equal("Parameter is read-only.", ex.Message);
+        }
+
+        [Fact]
+        public void Element_SetParameterValue_UpdatesParameter()
+        {
+            var element = new Element(new ElementId(1));
+            var parameter = new Parameter(new ElementId(10)) { StorageType = StorageType.Integer };
+            element.Parameters.Add(parameter);
+
+            element.SetParameterValue("10", 5);
+
+            Assert.Equal(5, parameter.AsInteger());
+        }
+
+        [Fact]
+        public void Element_TrySetParameterValue_NotFound_ReturnsFalse()
+        {
+            var element = new Element(new ElementId(1));
+
+            var result = element.TrySetParameterValue("42", 1, out var reason);
+
+            Assert.False(result);
+            Assert.Equal("Parameter not found.", reason);
+        }
+
+        [Fact]
+        public void Element_SetParameterValue_NotFound_Throws()
+        {
+            var element = new Element(new ElementId(1));
+
+            var ex = Assert.Throws<InvalidOperationException>(() => element.SetParameterValue("99", 2));
+            Assert.Equal("Parameter not found.", ex.Message);
+        }
     }
 }
