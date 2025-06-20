@@ -263,5 +263,16 @@ namespace RevitExtensions
 
             return parameter.TrySetParameterValue(value, out reason);
         }
+
+        /// <summary>
+        /// Creates a <see cref="ParameterIdentifier"/> for the parameter.
+        /// </summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <returns>A <see cref="ParameterIdentifier"/> identifying the parameter.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
+        public static ParameterIdentifier ToIdentifier(this Parameter parameter)
+        {
+            return ParameterIdentifier.FromParameter(parameter);
+        }
     }
 }

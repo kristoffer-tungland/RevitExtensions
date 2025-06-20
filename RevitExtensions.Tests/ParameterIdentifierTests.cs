@@ -56,5 +56,50 @@ namespace RevitExtensions.Tests
             Assert.Null(id.Id);
             Assert.Equal("Foo", id.ToStableRepresentation());
         }
+
+        [Fact]
+        public void FromParameter_Guid_ReturnsIdentifierWithGuid()
+        {
+            var guid = Guid.NewGuid();
+            var parameter = new Parameter(guid);
+
+            var id = ParameterIdentifier.FromParameter(parameter);
+
+            Assert.Equal(guid, id.Guid);
+            Assert.Equal(guid.ToString(), parameter.ToIdentifier().ToStableRepresentation());
+        }
+
+        [Fact]
+        public void FromParameter_BuiltInParameter_ReturnsIdentifier()
+        {
+            var parameter = new Parameter((BuiltInParameter)(-10));
+
+            var id = ParameterIdentifier.FromParameter(parameter);
+
+            Assert.Equal((BuiltInParameter)(-10), id.BuiltInParameter);
+            Assert.Equal("-10", parameter.ToIdentifier().ToStableRepresentation());
+        }
+
+        [Fact]
+        public void FromParameter_Name_ReturnsIdentifier()
+        {
+            var parameter = new Parameter("Foo");
+
+            var id = ParameterIdentifier.FromParameter(parameter);
+
+            Assert.Equal("Foo", id.Name);
+            Assert.Equal("Foo", parameter.ToIdentifier().ToStableRepresentation());
+        }
+
+        [Fact]
+        public void FromParameter_Id_ReturnsIdentifier()
+        {
+            var parameter = new Parameter(new ElementId(5));
+
+            var id = ParameterIdentifier.FromParameter(parameter);
+
+            Assert.Equal(5L, id.Id);
+            Assert.Equal("5", parameter.ToIdentifier().ToStableRepresentation());
+        }
     }
 }

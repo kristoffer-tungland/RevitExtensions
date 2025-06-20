@@ -247,12 +247,22 @@ namespace Autodesk.Revit.DB
         ElementId,
     }
 
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.Definition.
+    /// </summary>
+    public class Definition
+    {
+        public string Name { get; set; }
+    }
+
     public class Parameter : IDisposable
     {
         public BuiltInParameter? BuiltInParameter { get; }
         public ElementId Id { get; }
         public Guid? Guid { get; }
+        public Guid? GUID => Guid;
         public string Name { get; }
+        public Definition Definition { get; }
         public bool IsDisposed { get; private set; }
         public StorageType StorageType { get; set; }
         public bool IsReadOnly { get; set; }
@@ -262,10 +272,29 @@ namespace Autodesk.Revit.DB
         private string _stringValue;
         private ElementId _elementIdValue;
 
-        public Parameter(BuiltInParameter bip) => BuiltInParameter = bip;
-        public Parameter(ElementId id) => Id = id;
-        public Parameter(Guid guid) => Guid = guid;
-        public Parameter(string name) => Name = name;
+        public Parameter(BuiltInParameter bip)
+        {
+            BuiltInParameter = bip;
+            Definition = new Definition { Name = bip.ToString() };
+        }
+
+        public Parameter(ElementId id)
+        {
+            Id = id;
+            Definition = new Definition();
+        }
+
+        public Parameter(Guid guid)
+        {
+            Guid = guid;
+            Definition = new Definition();
+        }
+
+        public Parameter(string name)
+        {
+            Name = name;
+            Definition = new Definition { Name = name };
+        }
 
         public int AsInteger() => _intValue;
         public double AsDouble() => _doubleValue;
