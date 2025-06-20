@@ -40,13 +40,23 @@ namespace RevitExtensions
             if (identifier.Guid.HasValue)
             {
                 var guid = identifier.Guid.Value;
-                parameter = element.get_Parameter(guid);
-                if (parameter == null)
+                foreach (Parameter p in element.Parameters)
                 {
-                    using var type = element.GetElementType();
-                    parameter = type?.get_Parameter(guid);
+                    var pg = TryGetGuid(p);
+                    if (pg.HasValue && pg.Value == guid)
+                        return p;
                 }
-                return parameter;
+
+                using var type = element.GetElementType();
+                if (type != null)
+                {
+                    foreach (Parameter p in type.Parameters)
+                    {
+                        var pg = TryGetGuid(p);
+                        if (pg.HasValue && pg.Value == guid)
+                            return p;
+                    }
+                }
             }
 
             if (identifier.BuiltInParameter.HasValue)
@@ -78,7 +88,6 @@ namespace RevitExtensions
                             return p;
                     }
                 }
-                return null;
             }
 
             if (!string.IsNullOrEmpty(identifier.Name))
@@ -158,7 +167,39 @@ namespace RevitExtensions
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
             using var parameter = element.GetParameter(identifier);
-            return parameter?.GetParameterValue();
+            var value = parameter?.GetParameterValue();
+
+            if (value == null && parameter != null)
+            {
+                var name = identifier.Name ?? parameter.Definition?.Name;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    foreach (Parameter p in element.Parameters)
+                    {
+                        if (p == parameter) continue;
+                        if (p.Definition?.Name == name)
+                        {
+                            var next = p.GetParameterValue();
+                            if (next != null) return next;
+                        }
+                    }
+
+                    using var typeElement = element.GetElementType();
+                    if (typeElement != null)
+                    {
+                        foreach (Parameter p in typeElement.Parameters)
+                        {
+                            if (p.Definition?.Name == name)
+                            {
+                                var next = p.GetParameterValue();
+                                if (next != null) return next;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return value;
         }
 
         /// <summary>
@@ -363,7 +404,6 @@ namespace RevitExtensions
             if (guid.HasValue)
             {
                 identifier.Guid = guid.Value;
-                return identifier;
             }
 
             var bipProp = parameter.GetType().GetProperty("BuiltInParameter");
@@ -373,7 +413,6 @@ namespace RevitExtensions
                 if (bipValue is BuiltInParameter bip)
                 {
                     identifier.BuiltInParameter = bip;
-                    return identifier;
                 }
             }
 
@@ -382,17 +421,18 @@ namespace RevitExtensions
                 var intValue = (int)parameter.Id.GetElementIdValue();
                 if (intValue < 0)
                 {
-                    identifier.BuiltInParameter = (BuiltInParameter)intValue;
-                    return identifier;
+                    if (!identifier.BuiltInParameter.HasValue)
+                        identifier.BuiltInParameter = (BuiltInParameter)intValue;
                 }
-
-                identifier.Id = parameter.Id.GetElementIdValue();
+                else
+                {
+                    identifier.Id = parameter.Id.GetElementIdValue();
+                }
             }
 
             if (!string.IsNullOrEmpty(parameter.Definition?.Name))
             {
                 identifier.Name = parameter.Definition.Name;
-                return identifier;
             }
 
             return identifier;

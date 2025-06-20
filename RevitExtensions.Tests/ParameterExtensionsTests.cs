@@ -33,6 +33,8 @@ namespace RevitExtensions.Tests
         {
             var element = new Element(new ElementId(1));
             var guid = Guid.NewGuid();
+            var p = new Parameter(guid);
+            element.Parameters.Add(p);
             var param = element.GetParameter(ParameterIdentifier.Parse(guid.ToString()));
 
             Assert.NotNull(param);
@@ -64,6 +66,36 @@ namespace RevitExtensions.Tests
             Assert.NotNull(param);
             Assert.Equal(9L, param.Id.GetElementIdValue());
             Assert.Same(type.Parameters[0], param);
+        }
+
+        [Fact]
+        public void GetParameter_GuidNotFound_FallsBackToName()
+        {
+            var source = new Parameter(Guid.NewGuid()) { Definition = { Name = "Foo" } };
+            var identifier = source.ToIdentifier();
+
+            var element = new Element(new ElementId(3));
+            element.Parameters.Add(new Parameter("Foo"));
+
+            var param = element.GetParameter(identifier);
+
+            Assert.NotNull(param);
+            Assert.Equal("Foo", param.Name);
+        }
+
+        [Fact]
+        public void GetParameter_IdNotFound_FallsBackToName()
+        {
+            var source = new Parameter(new ElementId(8)) { Definition = { Name = "Bar" } };
+            var identifier = source.ToIdentifier();
+
+            var element = new Element(new ElementId(4));
+            element.Parameters.Add(new Parameter("Bar"));
+
+            var param = element.GetParameter(identifier);
+
+            Assert.NotNull(param);
+            Assert.Equal("Bar", param.Name);
         }
 
         [Fact]
@@ -174,6 +206,24 @@ namespace RevitExtensions.Tests
 
             var ex = Assert.Throws<InvalidOperationException>(() => element.SetParameterValue(ParameterIdentifier.Parse("99"), 2));
             Assert.Equal("Parameter not found.", ex.Message);
+        }
+
+        [Fact]
+        public void GetParameterValue_NullValue_TriesNextParameter()
+        {
+            var source = new Parameter(new ElementId(11)) { Definition = { Name = "Baz" }, StorageType = StorageType.String };
+            // leave value null
+            var identifier = source.ToIdentifier();
+
+            var element = new Element(new ElementId(5));
+            element.Parameters.Add(source);
+            var second = new Parameter("Baz") { StorageType = StorageType.String };
+            second.Set("value");
+            element.Parameters.Add(second);
+
+            var value = element.GetParameterValue(identifier);
+
+            Assert.Equal("value", value);
         }
     }
 }
