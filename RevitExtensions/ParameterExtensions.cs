@@ -262,7 +262,10 @@ namespace RevitExtensions
             {
                 case StorageType.Double:
                     if (value is double d)
+                    {
+                        if (parameter.AsDouble() == d) return true;
                         result = parameter.Set(d);
+                    }
                     else
                     {
                         reason = "Value must be a double.";
@@ -271,7 +274,10 @@ namespace RevitExtensions
                     break;
                 case StorageType.Integer:
                     if (value is int i)
+                    {
+                        if (parameter.AsInteger() == i) return true;
                         result = parameter.Set(i);
+                    }
                     else
                     {
                         reason = "Value must be an integer.";
@@ -279,11 +285,17 @@ namespace RevitExtensions
                     }
                     break;
                 case StorageType.String:
-                    result = parameter.Set(value?.ToString());
+                    var str = value?.ToString();
+                    if (string.Equals(parameter.AsString(), str)) return true;
+                    result = parameter.Set(str);
                     break;
                 case StorageType.ElementId:
                     if (value is ElementId id)
                     {
+                        var current = parameter.AsElementId();
+                        if ((current == null && id == null) ||
+                            (current != null && current.GetElementIdValue() == id.GetElementIdValue()))
+                            return true;
                         result = parameter.Set(id);
                     }
                     else
