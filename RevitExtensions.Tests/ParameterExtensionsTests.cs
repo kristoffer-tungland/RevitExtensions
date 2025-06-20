@@ -11,7 +11,7 @@ namespace RevitExtensions.Tests
         public void GetParameter_NegativeInt_UsesBuiltInParameter()
         {
             var element = new Element(new ElementId(1));
-            var param = element.GetParameter("-5");
+            var param = element.GetParameter(ParameterIdentifier.Parse("-5"));
 
             Assert.NotNull(param);
             Assert.Equal((BuiltInParameter)(-5), param.BuiltInParameter);
@@ -22,7 +22,7 @@ namespace RevitExtensions.Tests
         {
             var element = new Element(new ElementId(1));
             element.Parameters.Add(new Parameter(new ElementId(7)));
-            var param = element.GetParameter("7");
+            var param = element.GetParameter(ParameterIdentifier.Parse("7"));
 
             Assert.NotNull(param);
             Assert.Equal(7L, param.Id.GetElementIdValue());
@@ -33,7 +33,7 @@ namespace RevitExtensions.Tests
         {
             var element = new Element(new ElementId(1));
             var guid = Guid.NewGuid();
-            var param = element.GetParameter(guid.ToString());
+            var param = element.GetParameter(ParameterIdentifier.Parse(guid.ToString()));
 
             Assert.NotNull(param);
             Assert.Equal(guid, param.Guid);
@@ -43,7 +43,7 @@ namespace RevitExtensions.Tests
         public void GetParameter_Name_UsesLookup()
         {
             var element = new Element(new ElementId(1));
-            var param = element.GetParameter("Foo");
+            var param = element.GetParameter(ParameterIdentifier.Parse("Foo"));
 
             Assert.NotNull(param);
             Assert.Equal("Foo", param.Name);
@@ -59,7 +59,7 @@ namespace RevitExtensions.Tests
 
             var element = new Element(doc, new ElementId(2)) { TypeId = new ElementId(20) };
 
-            var param = element.GetParameter("9");
+            var param = element.GetParameter(ParameterIdentifier.Parse("9"));
 
             Assert.NotNull(param);
             Assert.Equal(9L, param.Id.GetElementIdValue());
@@ -85,7 +85,7 @@ namespace RevitExtensions.Tests
             parameter.Set(42);
             element.Parameters.Add(parameter);
 
-            var value = element.GetParameterValue("5");
+            var value = element.GetParameterValue(ParameterIdentifier.Parse("5"));
 
             Assert.Equal(42, value);
         }
@@ -109,7 +109,7 @@ namespace RevitExtensions.Tests
             parameter.Set(new ElementId(7));
             element.Parameters.Add(parameter);
 
-            var value = element.GetParameterValue<long>("7");
+            var value = element.GetParameterValue<long>(ParameterIdentifier.Parse("7"));
 
             Assert.Equal(7L, value);
         }
@@ -151,7 +151,7 @@ namespace RevitExtensions.Tests
             var parameter = new Parameter(new ElementId(10)) { StorageType = StorageType.Integer };
             element.Parameters.Add(parameter);
 
-            element.SetParameterValue("10", 5);
+            element.SetParameterValue(ParameterIdentifier.Parse("10"), 5);
 
             Assert.Equal(5, parameter.AsInteger());
         }
@@ -161,7 +161,7 @@ namespace RevitExtensions.Tests
         {
             var element = new Element(new ElementId(1));
 
-            var result = element.TrySetParameterValue("42", 1, out var reason);
+            var result = element.TrySetParameterValue(ParameterIdentifier.Parse("42"), 1, out var reason);
 
             Assert.False(result);
             Assert.Equal("Parameter not found.", reason);
@@ -172,7 +172,7 @@ namespace RevitExtensions.Tests
         {
             var element = new Element(new ElementId(1));
 
-            var ex = Assert.Throws<InvalidOperationException>(() => element.SetParameterValue("99", 2));
+            var ex = Assert.Throws<InvalidOperationException>(() => element.SetParameterValue(ParameterIdentifier.Parse("99"), 2));
             Assert.Equal("Parameter not found.", ex.Message);
         }
     }

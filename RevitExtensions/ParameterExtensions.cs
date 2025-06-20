@@ -20,44 +20,26 @@ namespace RevitExtensions
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
+            return element.GetParameter(ParameterIdentifier.Parse(identifier));
+        }
+
+        /// <summary>
+        /// Gets a parameter from the element or its type using a <see cref="ParameterIdentifier"/>.
+        /// </summary>
+        /// <param name="element">The element to search.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The found parameter or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static Parameter GetParameter(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
             Parameter parameter = null;
 
-            if (int.TryParse(identifier, out var intValue))
+            if (identifier.Guid.HasValue)
             {
-                if (intValue < 0)
-                {
-                    var bip = (BuiltInParameter)intValue;
-                    parameter = element.get_Parameter(bip);
-                    if (parameter == null)
-                    {
-                        using var type = element.GetElementType();
-                        parameter = type?.get_Parameter(bip);
-                    }
-                    return parameter;
-                }
-                else
-                {
-                    long idValue = intValue;
-                    foreach (Parameter p in element.Parameters)
-                    {
-                        if (p.Id != null && p.Id.GetElementIdValue() == idValue)
-                            return p;
-                    }
-                    using var typeElem = element.GetElementType();
-                    if (typeElem != null)
-                    {
-                        foreach (Parameter p in typeElem.Parameters)
-                        {
-                            if (p.Id != null && p.Id.GetElementIdValue() == idValue)
-                                return p;
-                        }
-                    }
-                    return null;
-                }
-            }
-
-            if (Guid.TryParse(identifier, out var guid))
-            {
+                var guid = identifier.Guid.Value;
                 parameter = element.get_Parameter(guid);
                 if (parameter == null)
                 {
@@ -67,10 +49,47 @@ namespace RevitExtensions
                 return parameter;
             }
 
-            parameter = element.LookupParameter(identifier);
-            if (parameter != null) return parameter;
-            using var typeElement = element.GetElementType();
-            return typeElement?.LookupParameter(identifier);
+            if (identifier.BuiltInParameter.HasValue)
+            {
+                var bip = identifier.BuiltInParameter.Value;
+                parameter = element.get_Parameter(bip);
+                if (parameter == null)
+                {
+                    using var type = element.GetElementType();
+                    parameter = type?.get_Parameter(bip);
+                }
+                return parameter;
+            }
+
+            if (identifier.Id.HasValue)
+            {
+                long idValue = identifier.Id.Value;
+                foreach (Parameter p in element.Parameters)
+                {
+                    if (p.Id != null && p.Id.GetElementIdValue() == idValue)
+                        return p;
+                }
+                using var typeElem = element.GetElementType();
+                if (typeElem != null)
+                {
+                    foreach (Parameter p in typeElem.Parameters)
+                    {
+                        if (p.Id != null && p.Id.GetElementIdValue() == idValue)
+                            return p;
+                    }
+                }
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(identifier.Name))
+            {
+                parameter = element.LookupParameter(identifier.Name);
+                if (parameter != null) return parameter;
+                using var typeElement = element.GetElementType();
+                return typeElement?.LookupParameter(identifier.Name);
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -123,6 +142,21 @@ namespace RevitExtensions
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
+            return element.GetParameterValue(ParameterIdentifier.Parse(identifier));
+        }
+
+        /// <summary>
+        /// Retrieves the value of the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The parameter value or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static object GetParameterValue(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
             using var parameter = element.GetParameter(identifier);
             return parameter?.GetParameterValue();
         }
@@ -136,6 +170,24 @@ namespace RevitExtensions
         /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static T GetParameterValue<T>(this Element element, string identifier)
+        {
+            var value = element.GetParameterValue(identifier);
+            if (value == null) return default;
+
+            if (value is T t) return t;
+
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+
+        /// <summary>
+        /// Retrieves the value of the parameter identified on the element and converts it to the specified type.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <typeparam name="T">The desired return type.</typeparam>
+        /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static T GetParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
             var value = element.GetParameterValue(identifier);
             if (value == null) return default;
@@ -244,12 +296,43 @@ namespace RevitExtensions
         /// Sets the value of the parameter identified on the element.
         /// </summary>
         /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <param name="value">The value to set.</param>
+        /// <returns>True if successful.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static void SetParameterValue(this Element element, ParameterIdentifier identifier, object value)
+        {
+            if (!element.TrySetParameterValue(identifier, value, out var reason))
+                throw new InvalidOperationException(reason);
+        }
+
+        /// <summary>
+        /// Sets the value of the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
         /// <param name="identifier">The parameter identifier string.</param>
         /// <param name="value">The value to set.</param>
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static bool TrySetParameterValue(this Element element, string identifier, object value, out string reason)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            return element.TrySetParameterValue(ParameterIdentifier.Parse(identifier), value, out reason);
+        }
+
+        /// <summary>
+        /// Sets the value of the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <param name="value">The value to set.</param>
+        /// <param name="reason">Outputs the failure reason.</param>
+        /// <returns>True if successful.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static bool TrySetParameterValue(this Element element, ParameterIdentifier identifier, object value, out string reason)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
