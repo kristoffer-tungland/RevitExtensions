@@ -35,70 +35,56 @@ namespace RevitExtensions
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
-            Parameter parameter = null;
-
-            if (identifier.Guid.HasValue)
+            Parameter FindOn(Element source)
             {
-                var guid = identifier.Guid.Value;
-                foreach (Parameter p in element.Parameters)
+                Parameter p = null;
+                if (identifier.Guid.HasValue)
                 {
-                    var pg = TryGetGuid(p);
-                    if (pg.HasValue && pg.Value == guid)
-                        return p;
+                    p = source.get_Parameter(identifier.Guid.Value);
+                    if (p != null) return p;
+                    if (!string.IsNullOrEmpty(identifier.Name))
+                        return source.LookupParameter(identifier.Name);
+                    return null;
                 }
 
-                using var type = element.GetElementType();
-                if (type != null)
+                if (identifier.BuiltInParameter.HasValue)
                 {
-                    foreach (Parameter p in type.Parameters)
+                    p = source.get_Parameter(identifier.BuiltInParameter.Value);
+                    if (p != null) return p;
+                    if (!string.IsNullOrEmpty(identifier.Name))
+                        return source.LookupParameter(identifier.Name);
+                    return null;
+                }
+
+                if (identifier.Id.HasValue)
+                {
+                    var target = identifier.Id.Value;
+                    foreach (Parameter ip in source.Parameters)
                     {
-                        var pg = TryGetGuid(p);
-                        if (pg.HasValue && pg.Value == guid)
-                            return p;
+                        if (ip.Id != null && ip.Id.GetElementIdValue() == target)
+                            return ip;
                     }
+                    if (!string.IsNullOrEmpty(identifier.Name))
+                        return source.LookupParameter(identifier.Name);
+                    return null;
                 }
+
+                if (!string.IsNullOrEmpty(identifier.Name))
+                    return source.LookupParameter(identifier.Name);
+
+                return null;
             }
 
-            if (identifier.BuiltInParameter.HasValue)
+            var parameter = FindOn(element);
+            if (parameter != null) return parameter;
+
+            using var typeElement = element.GetElementType();
+            if (typeElement != null)
             {
-                var bip = identifier.BuiltInParameter.Value;
-                parameter = element.get_Parameter(bip);
-                if (parameter == null)
-                {
-                    using var type = element.GetElementType();
-                    parameter = type?.get_Parameter(bip);
-                }
-                return parameter;
+                parameter = FindOn(typeElement);
             }
 
-            if (identifier.Id.HasValue)
-            {
-                long idValue = identifier.Id.Value;
-                foreach (Parameter p in element.Parameters)
-                {
-                    if (p.Id != null && p.Id.GetElementIdValue() == idValue)
-                        return p;
-                }
-                using var typeElem = element.GetElementType();
-                if (typeElem != null)
-                {
-                    foreach (Parameter p in typeElem.Parameters)
-                    {
-                        if (p.Id != null && p.Id.GetElementIdValue() == idValue)
-                            return p;
-                    }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(identifier.Name))
-            {
-                parameter = element.LookupParameter(identifier.Name);
-                if (parameter != null) return parameter;
-                using var typeElement = element.GetElementType();
-                return typeElement?.LookupParameter(identifier.Name);
-            }
-
-            return null;
+            return parameter;
         }
 
         /// <summary>

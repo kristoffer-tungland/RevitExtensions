@@ -43,13 +43,56 @@ namespace Autodesk.Revit.DB
 
         public ElementId GetTypeId() => TypeId;
 
-        public Parameter get_Parameter(BuiltInParameter parameter) => new Parameter(parameter);
+        private static long GetIdValue(ElementId id)
+        {
+#if REVIT2024_OR_ABOVE
+            return id?.Value ?? 0;
+#else
+            return id?.IntegerValue ?? 0;
+#endif
+        }
 
-        public Parameter get_Parameter(ElementId id) => new Parameter(id);
+        public Parameter get_Parameter(BuiltInParameter parameter)
+        {
+            foreach (var p in Parameters)
+            {
+                if (p.BuiltInParameter == parameter)
+                    return p;
+            }
+            return null;
+        }
 
-        public Parameter get_Parameter(Guid guid) => new Parameter(guid);
+        public Parameter get_Parameter(ElementId id)
+        {
+            if (id == null) return null;
+            var value = GetIdValue(id);
+            foreach (var p in Parameters)
+            {
+                if (p.Id != null && GetIdValue(p.Id) == value)
+                    return p;
+            }
+            return null;
+        }
 
-        public Parameter LookupParameter(string name) => new Parameter(name);
+        public Parameter get_Parameter(Guid guid)
+        {
+            foreach (var p in Parameters)
+            {
+                if (p.Guid.HasValue && p.Guid.Value == guid)
+                    return p;
+            }
+            return null;
+        }
+
+        public Parameter LookupParameter(string name)
+        {
+            foreach (var p in Parameters)
+            {
+                if (p.Definition?.Name == name || p.Name == name)
+                    return p;
+            }
+            return null;
+        }
 
         /// <summary>
         /// Disposes the element. In the stubs this simply sets <see cref="IsDisposed"/>.

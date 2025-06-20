@@ -11,10 +11,12 @@ namespace RevitExtensions.Tests
         public void GetParameter_NegativeInt_UsesBuiltInParameter()
         {
             var element = new Element(new ElementId(1));
+            var expected = new Parameter((BuiltInParameter)(-5));
+            element.Parameters.Add(expected);
+
             var param = element.GetParameter(ParameterIdentifier.Parse("-5"));
 
-            Assert.NotNull(param);
-            Assert.Equal((BuiltInParameter)(-5), param.BuiltInParameter);
+            Assert.Same(expected, param);
         }
 
         [Fact]
@@ -45,10 +47,12 @@ namespace RevitExtensions.Tests
         public void GetParameter_Name_UsesLookup()
         {
             var element = new Element(new ElementId(1));
+            var expected = new Parameter("Foo");
+            element.Parameters.Add(expected);
+
             var param = element.GetParameter(ParameterIdentifier.Parse("Foo"));
 
-            Assert.NotNull(param);
-            Assert.Equal("Foo", param.Name);
+            Assert.Same(expected, param);
         }
 
         [Fact]
