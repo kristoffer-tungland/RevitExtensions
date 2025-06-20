@@ -1,5 +1,6 @@
 using System;
 using Autodesk.Revit.DB;
+using System.Globalization;
 
 namespace RevitExtensions
 {
@@ -122,7 +123,35 @@ namespace RevitExtensions
 
             if (value is T t) return t;
 
-            return (T)Convert.ChangeType(value, typeof(T));
+            var target = typeof(T);
+
+            if (target == typeof(bool) || target == typeof(bool?))
+            {
+                bool b = value switch
+                {
+                    int i => i != 0,
+                    long l => l != 0,
+                    string s => bool.Parse(s),
+                    bool bv => bv,
+                    _ => Convert.ToBoolean(value)
+                };
+                return (T)(object)b;
+            }
+
+            if (target == typeof(DateTime) || target == typeof(DateTime?))
+            {
+                DateTime dt = value switch
+                {
+                    int i => DateTimeOffset.FromUnixTimeSeconds(i).UtcDateTime,
+                    long l => DateTimeOffset.FromUnixTimeSeconds(l).UtcDateTime,
+                    string s => DateTime.Parse(s, null, System.Globalization.DateTimeStyles.RoundtripKind),
+                    double d => DateTime.FromOADate(d),
+                    _ => (DateTime)Convert.ChangeType(value, typeof(DateTime))
+                };
+                return (T)(object)dt;
+            }
+
+            return (T)Convert.ChangeType(value, target);
         }
 
         /// <summary>
@@ -203,7 +232,35 @@ namespace RevitExtensions
 
             if (value is T t) return t;
 
-            return (T)Convert.ChangeType(value, typeof(T));
+            var target = typeof(T);
+
+            if (target == typeof(bool) || target == typeof(bool?))
+            {
+                bool b = value switch
+                {
+                    int i => i != 0,
+                    long l => l != 0,
+                    string s => bool.Parse(s),
+                    bool bv => bv,
+                    _ => Convert.ToBoolean(value)
+                };
+                return (T)(object)b;
+            }
+
+            if (target == typeof(DateTime) || target == typeof(DateTime?))
+            {
+                DateTime dt = value switch
+                {
+                    int i => DateTimeOffset.FromUnixTimeSeconds(i).UtcDateTime,
+                    long l => DateTimeOffset.FromUnixTimeSeconds(l).UtcDateTime,
+                    string s => DateTime.Parse(s, null, System.Globalization.DateTimeStyles.RoundtripKind),
+                    double d => DateTime.FromOADate(d),
+                    _ => (DateTime)Convert.ChangeType(value, typeof(DateTime))
+                };
+                return (T)(object)dt;
+            }
+
+            return (T)Convert.ChangeType(value, target);
         }
 
         /// <summary>
@@ -221,7 +278,35 @@ namespace RevitExtensions
 
             if (value is T t) return t;
 
-            return (T)Convert.ChangeType(value, typeof(T));
+            var target = typeof(T);
+
+            if (target == typeof(bool) || target == typeof(bool?))
+            {
+                bool b = value switch
+                {
+                    int i => i != 0,
+                    long l => l != 0,
+                    string s => bool.Parse(s),
+                    bool bv => bv,
+                    _ => Convert.ToBoolean(value)
+                };
+                return (T)(object)b;
+            }
+
+            if (target == typeof(DateTime) || target == typeof(DateTime?))
+            {
+                DateTime dt = value switch
+                {
+                    int i => DateTimeOffset.FromUnixTimeSeconds(i).UtcDateTime,
+                    long l => DateTimeOffset.FromUnixTimeSeconds(l).UtcDateTime,
+                    string s => DateTime.Parse(s, null, System.Globalization.DateTimeStyles.RoundtripKind),
+                    double d => DateTime.FromOADate(d),
+                    _ => (DateTime)Convert.ChangeType(value, typeof(DateTime))
+                };
+                return (T)(object)dt;
+            }
+
+            return (T)Convert.ChangeType(value, target);
         }
 
         /// <summary>
@@ -261,48 +346,75 @@ namespace RevitExtensions
             switch (parameter.StorageType)
             {
                 case StorageType.Double:
-                    if (value is double d)
+                    double d;
+                    if (value is double dd) d = dd;
+                    else if (value is bool b) d = b ? 1 : 0;
+                    else if (value is DateTime dt) d = dt.ToOADate();
+                    else if (value is string s)
                     {
-                        if (parameter.AsDouble() == d) return true;
-                        result = parameter.Set(d);
+                        if (!double.TryParse(s, out d))
+                        {
+                            if (bool.TryParse(s, out var bs)) d = bs ? 1 : 0;
+                            else if (DateTime.TryParse(s, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dts)) d = dts.ToOADate();
+                            else { reason = "Value must be a number."; return false; }
+                        }
                     }
-                    else
+                    else if (value is IConvertible)
                     {
-                        reason = "Value must be a double.";
-                        return false;
+                        try { d = Convert.ToDouble(value); }
+                        catch { reason = "Value must be a number."; return false; }
                     }
+                    else { reason = "Value must be a number."; return false; }
+
+                    if (parameter.AsDouble() == d) return true;
+                    result = parameter.Set(d);
                     break;
                 case StorageType.Integer:
-                    if (value is int i)
+                    int i;
+                    if (value is int ii) i = ii;
+                    else if (value is bool b2) i = b2 ? 1 : 0;
+                    else if (value is DateTime dt2) i = (int)new DateTimeOffset(dt2).ToUnixTimeSeconds();
+                    else if (value is string s2)
                     {
-                        if (parameter.AsInteger() == i) return true;
-                        result = parameter.Set(i);
+                        if (!int.TryParse(s2, out i))
+                        {
+                            if (bool.TryParse(s2, out var sb)) i = sb ? 1 : 0;
+                            else if (DateTime.TryParse(s2, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dtp)) i = (int)new DateTimeOffset(dtp).ToUnixTimeSeconds();
+                            else { reason = "Value must be an integer."; return false; }
+                        }
                     }
-                    else
+                    else if (value is IConvertible)
                     {
-                        reason = "Value must be an integer.";
-                        return false;
+                        try { i = Convert.ToInt32(value); }
+                        catch { reason = "Value must be an integer."; return false; }
                     }
+                    else { reason = "Value must be an integer."; return false; }
+
+                    if (parameter.AsInteger() == i) return true;
+                    result = parameter.Set(i);
                     break;
                 case StorageType.String:
-                    var str = value?.ToString();
+                    string str;
+                    if (value is DateTime dt3) str = dt3.ToString("o");
+                    else if (value is ElementId id1) str = id1.GetElementIdValue().ToString();
+                    else str = value?.ToString();
+
                     if (string.Equals(parameter.AsString(), str)) return true;
                     result = parameter.Set(str);
                     break;
                 case StorageType.ElementId:
-                    if (value is ElementId id)
-                    {
-                        var current = parameter.AsElementId();
-                        if ((current == null && id == null) ||
-                            (current != null && current.GetElementIdValue() == id.GetElementIdValue()))
-                            return true;
-                        result = parameter.Set(id);
-                    }
-                    else
-                    {
-                        reason = "Value must be an ElementId.";
-                        return false;
-                    }
+                    ElementId id;
+                    if (value is ElementId eid) id = eid;
+                    else if (value is int i3) id = new ElementId(i3);
+                    else if (value is long l3) id = new ElementId((int)l3);
+                    else if (value is string s3 && int.TryParse(s3, out var idInt)) id = new ElementId(idInt);
+                    else { reason = "Value must be an ElementId."; return false; }
+
+                    var current = parameter.AsElementId();
+                    if ((current == null && id == null) ||
+                        (current != null && current.GetElementIdValue() == id.GetElementIdValue()))
+                        return true;
+                    result = parameter.Set(id);
                     break;
                 default:
                     reason = "Unsupported storage type.";

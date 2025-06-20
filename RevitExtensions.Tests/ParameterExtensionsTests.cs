@@ -229,5 +229,54 @@ namespace RevitExtensions.Tests
 
             Assert.Equal("value", value);
         }
+
+        [Fact]
+        public void SetParameterValue_BoolToInteger_WritesZeroOrOne()
+        {
+            var parameter = new Parameter("B") { StorageType = StorageType.Integer };
+
+            parameter.SetParameterValue(true);
+
+            Assert.Equal(1, parameter.AsInteger());
+
+            parameter.SetParameterValue(false);
+
+            Assert.Equal(0, parameter.AsInteger());
+        }
+
+        [Fact]
+        public void GetParameterValue_BoolFromInteger_ParsesBool()
+        {
+            var parameter = new Parameter("C") { StorageType = StorageType.Integer };
+            parameter.Set(1);
+
+            var value = parameter.GetParameterValue<bool>();
+
+            Assert.True(value);
+        }
+
+        [Fact]
+        public void SetParameterValue_DateTimeToString_WritesIso()
+        {
+            var dt = new DateTime(2024, 6, 20, 12, 0, 0, DateTimeKind.Utc);
+            var parameter = new Parameter("D") { StorageType = StorageType.String };
+
+            parameter.SetParameterValue(dt);
+
+            Assert.Equal(dt.ToString("o"), parameter.AsString());
+        }
+
+        [Fact]
+        public void GetParameterValue_DateTimeFromInteger_ParsesUnixSeconds()
+        {
+            var dt = new DateTime(2024, 6, 20, 12, 0, 0, DateTimeKind.Utc);
+            var seconds = (int)new DateTimeOffset(dt).ToUnixTimeSeconds();
+            var parameter = new Parameter("E") { StorageType = StorageType.Integer };
+            parameter.Set(seconds);
+
+            var value = parameter.GetParameterValue<DateTime>();
+
+            Assert.Equal(dt, value);
+        }
     }
 }
