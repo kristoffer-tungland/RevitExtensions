@@ -9,7 +9,7 @@
     <PackageId>RevitExtensions</PackageId>
     <Authors>RevitExtensions</Authors>
     <PackageTags>Revit;API;Extensions</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>PackageReadme.md</PackageReadmeFile>
     <!-- Default Revit API package versions; overridden when packaging -->
     <RevitApiPackageVersion>2026.0.0</RevitApiPackageVersion>
     <RevitApiPackageVersion Condition="'$(TargetFramework)' == 'net48'">2024.2.0</RevitApiPackageVersion>
@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="PackageReadme.md" Pack="true" PackagePath="" />
     <None Include="../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
