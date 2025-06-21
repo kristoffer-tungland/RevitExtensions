@@ -107,5 +107,70 @@ namespace RevitExtensions.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => t.CommitAndEnsure());
             Assert.Equal("Failed to commit transaction.", ex.Message);
         }
+
+        [Fact]
+        public void StartTransactionGroup_StartsAndReturnsGroup()
+        {
+            var doc = new Document();
+
+            using var g = doc.StartTransactionGroup("Foo");
+
+            Assert.Same(doc, g.Document);
+            Assert.Equal("Foo", g.Name);
+            Assert.True(g.IsStarted);
+        }
+
+        [Fact]
+        public void AssimilateAndEnsure_Committed_DoesNotThrow()
+        {
+            var doc = new Document();
+            using var g = doc.StartTransactionGroup("Foo");
+
+            g.AssimilateAndEnsure();
+
+            Assert.False(g.IsStarted);
+        }
+
+        [Fact]
+        public void AssimilateAndEnsure_Failed_Throws()
+        {
+            var doc = new Document();
+            using var g = new TransactionGroup(doc, "Foo");
+
+            var ex = Assert.Throws<InvalidOperationException>(() => g.AssimilateAndEnsure());
+            Assert.Equal("Failed to assimilate transaction group.", ex.Message);
+        }
+
+        [Fact]
+        public void StartSubTransaction_StartsAndReturnsSubTransaction()
+        {
+            var doc = new Document();
+
+            using var sub = doc.StartSubTransaction();
+
+            Assert.Same(doc, sub.Document);
+            Assert.True(sub.IsStarted);
+        }
+
+        [Fact]
+        public void CommitSubTransactionAndEnsure_Committed_DoesNotThrow()
+        {
+            var doc = new Document();
+            using var sub = doc.StartSubTransaction();
+
+            sub.CommitAndEnsure();
+
+            Assert.False(sub.IsStarted);
+        }
+
+        [Fact]
+        public void CommitSubTransactionAndEnsure_Failed_Throws()
+        {
+            var doc = new Document();
+            using var sub = new SubTransaction(doc);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => sub.CommitAndEnsure());
+            Assert.Equal("Failed to commit subtransaction.", ex.Message);
+        }
     }
 }

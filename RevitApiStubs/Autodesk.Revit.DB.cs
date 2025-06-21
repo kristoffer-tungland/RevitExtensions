@@ -447,4 +447,72 @@ namespace Autodesk.Revit.DB
         Error
     }
 
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.TransactionGroup.
+    /// </summary>
+    public class TransactionGroup : IDisposable
+    {
+        public Document Document { get; }
+        public string Name { get; }
+
+        public bool IsDisposed { get; private set; }
+        public bool IsStarted { get; private set; }
+
+        public TransactionGroup(Document document, string name)
+        {
+            Document = document;
+            Name = name;
+        }
+
+        public TransactionStatus Start()
+        {
+            IsStarted = true;
+            return TransactionStatus.Started;
+        }
+
+        public TransactionStatus Assimilate()
+        {
+            if (!IsStarted)
+                return TransactionStatus.Error;
+
+            IsStarted = false;
+            return TransactionStatus.Committed;
+        }
+
+        public void Dispose() => IsDisposed = true;
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.SubTransaction.
+    /// </summary>
+    public class SubTransaction : IDisposable
+    {
+        public Document Document { get; }
+
+        public bool IsDisposed { get; private set; }
+        public bool IsStarted { get; private set; }
+
+        public SubTransaction(Document document)
+        {
+            Document = document;
+        }
+
+        public TransactionStatus Start()
+        {
+            IsStarted = true;
+            return TransactionStatus.Started;
+        }
+
+        public TransactionStatus Commit()
+        {
+            if (!IsStarted)
+                return TransactionStatus.Error;
+
+            IsStarted = false;
+            return TransactionStatus.Committed;
+        }
+
+        public void Dispose() => IsDisposed = true;
+    }
+
 }
