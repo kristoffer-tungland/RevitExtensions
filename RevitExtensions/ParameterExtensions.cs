@@ -43,18 +43,12 @@ namespace RevitExtensions
                 {
                     p = source.get_Parameter(identifier.Guid.Value);
                     if (p != null) return p;
-                    if (!string.IsNullOrEmpty(identifier.Name))
-                        return source.LookupParameter(identifier.Name);
-                    return null;
                 }
 
                 if (identifier.BuiltInParameter.HasValue)
                 {
                     p = source.get_Parameter(identifier.BuiltInParameter.Value);
                     if (p != null) return p;
-                    if (!string.IsNullOrEmpty(identifier.Name))
-                        return source.LookupParameter(identifier.Name);
-                    return null;
                 }
 
                 if (identifier.Id.HasValue)
@@ -65,13 +59,15 @@ namespace RevitExtensions
                         if (ip.Id != null && ip.Id.GetElementIdValue() == target)
                             return ip;
                     }
-                    if (!string.IsNullOrEmpty(identifier.Name))
-                        return source.LookupParameter(identifier.Name);
-                    return null;
                 }
 
-                if (!string.IsNullOrEmpty(identifier.Name))
+                if (!identifier.Guid.HasValue &&
+                    !identifier.BuiltInParameter.HasValue &&
+                    !identifier.Id.HasValue &&
+                    !string.IsNullOrEmpty(identifier.Name))
+                {
                     return source.LookupParameter(identifier.Name);
+                }
 
                 return null;
             }
@@ -86,6 +82,42 @@ namespace RevitExtensions
             }
 
             return parameter;
+        }
+
+        /// <summary>
+        /// Looks up a parameter from the element or its type using a <see cref="ParameterIdentifier"/>.
+        /// This method will fall back to the parameter name when the strict lookup fails.
+        /// </summary>
+        /// <param name="element">The element to search.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The found parameter or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static Parameter LookupParameter(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var parameter = element.GetParameter(identifier);
+            if (parameter != null) return parameter;
+
+            if (!string.IsNullOrEmpty(identifier.Name))
+            {
+                parameter = element.LookupParameter(identifier.Name);
+                if (parameter != null) return parameter;
+
+                using var typeElement = element.GetElementType();
+                return typeElement?.LookupParameter(identifier.Name);
+            }
+
+            return null;
+        }
+
+        public static Parameter LookupParameter(this Element element, string identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            return element.LookupParameter(ParameterIdentifier.Parse(identifier));
         }
 
         /// <summary>
@@ -156,6 +188,77 @@ namespace RevitExtensions
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
             using var parameter = element.GetParameter(identifier);
+            return parameter?.GetParameterValue();
+        }
+
+        /// <summary>
+        /// Retrieves the value of the parameter identified on the element and converts it to the specified type.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier string.</param>
+        /// <typeparam name="T">The desired return type.</typeparam>
+        /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static T GetParameterValue<T>(this Element element, string identifier)
+        {
+            var value = element.GetParameterValue(identifier);
+            if (value == null) return default;
+
+            if (value is T t) return t;
+
+            var target = typeof(T);
+
+            return (T)CustomConvert.ChangeType(value, target);
+        }
+
+        /// <summary>
+        /// Retrieves the value of the parameter identified on the element and converts it to the specified type.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <typeparam name="T">The desired return type.</typeparam>
+        /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static T GetParameterValue<T>(this Element element, ParameterIdentifier identifier)
+        {
+            var value = element.GetParameterValue(identifier);
+            if (value == null) return default;
+
+            if (value is T t) return t;
+
+            var target = typeof(T);
+
+            return (T)CustomConvert.ChangeType(value, target);
+        }
+
+        /// <summary>
+        /// Looks up the value of the parameter identified on the element.
+        /// If the retrieved parameter has a null value, additional parameters with the same name are searched.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier string.</param>
+        /// <returns>The parameter value or null.</returns>
+        public static object LookupParameterValue(this Element element, string identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            return element.LookupParameterValue(ParameterIdentifier.Parse(identifier));
+        }
+
+        /// <summary>
+        /// Looks up the value of the parameter identified on the element.
+        /// If the retrieved parameter has a null value, additional parameters with the same name are searched.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The parameter value or null.</returns>
+        public static object LookupParameterValue(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            using var parameter = element.LookupParameter(identifier);
             var value = parameter?.GetParameterValue();
 
             if (value == null && parameter != null)
@@ -191,17 +294,9 @@ namespace RevitExtensions
             return value;
         }
 
-        /// <summary>
-        /// Retrieves the value of the parameter identified on the element and converts it to the specified type.
-        /// </summary>
-        /// <param name="element">The element.</param>
-        /// <param name="identifier">The parameter identifier string.</param>
-        /// <typeparam name="T">The desired return type.</typeparam>
-        /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static T GetParameterValue<T>(this Element element, string identifier)
+        public static T LookupParameterValue<T>(this Element element, string identifier)
         {
-            var value = element.GetParameterValue(identifier);
+            var value = element.LookupParameterValue(identifier);
             if (value == null) return default;
 
             if (value is T t) return t;
@@ -211,17 +306,9 @@ namespace RevitExtensions
             return (T)CustomConvert.ChangeType(value, target);
         }
 
-        /// <summary>
-        /// Retrieves the value of the parameter identified on the element and converts it to the specified type.
-        /// </summary>
-        /// <param name="element">The element.</param>
-        /// <param name="identifier">The parameter identifier.</param>
-        /// <typeparam name="T">The desired return type.</typeparam>
-        /// <returns>The converted value or default if the parameter is not found or has a null value.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static T GetParameterValue<T>(this Element element, ParameterIdentifier identifier)
+        public static T LookupParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
-            var value = element.GetParameterValue(identifier);
+            var value = element.LookupParameterValue(identifier);
             if (value == null) return default;
 
             if (value is T t) return t;

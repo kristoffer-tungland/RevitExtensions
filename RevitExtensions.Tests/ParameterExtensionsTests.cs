@@ -73,7 +73,7 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetParameter_GuidNotFound_FallsBackToName()
+        public void LookupParameter_GuidNotFound_FallsBackToName()
         {
             var source = new Parameter(Guid.NewGuid()) { Definition = { Name = "Foo" } };
             var identifier = source.ToIdentifier();
@@ -81,14 +81,28 @@ namespace RevitExtensions.Tests
             var element = new Element(new ElementId(3));
             element.Parameters.Add(new Parameter("Foo"));
 
-            var param = element.GetParameter(identifier);
+            var param = element.LookupParameter(identifier);
 
             Assert.NotNull(param);
             Assert.Equal("Foo", param.Name);
         }
 
         [Fact]
-        public void GetParameter_IdNotFound_FallsBackToName()
+        public void GetParameter_GuidNotFound_ReturnsNull()
+        {
+            var source = new Parameter(Guid.NewGuid()) { Definition = { Name = "Foo" } };
+            var identifier = source.ToIdentifier();
+
+            var element = new Element(new ElementId(6));
+            element.Parameters.Add(new Parameter("Foo"));
+
+            var param = element.GetParameter(identifier);
+
+            Assert.Null(param);
+        }
+
+        [Fact]
+        public void LookupParameter_IdNotFound_FallsBackToName()
         {
             var source = new Parameter(new ElementId(8)) { Definition = { Name = "Bar" } };
             var identifier = source.ToIdentifier();
@@ -96,7 +110,7 @@ namespace RevitExtensions.Tests
             var element = new Element(new ElementId(4));
             element.Parameters.Add(new Parameter("Bar"));
 
-            var param = element.GetParameter(identifier);
+            var param = element.LookupParameter(identifier);
 
             Assert.NotNull(param);
             Assert.Equal("Bar", param.Name);
@@ -213,7 +227,7 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetParameterValue_NullValue_TriesNextParameter()
+        public void LookupParameterValue_NullValue_TriesNextParameter()
         {
             var source = new Parameter(new ElementId(11)) { Definition = { Name = "Baz" }, StorageType = StorageType.String };
             // leave value null
@@ -225,9 +239,24 @@ namespace RevitExtensions.Tests
             second.Set("value");
             element.Parameters.Add(second);
 
-            var value = element.GetParameterValue(identifier);
+            var value = element.LookupParameterValue(identifier);
 
             Assert.Equal("value", value);
+        }
+
+        [Fact]
+        public void GetParameterValue_NullValue_ReturnsNull()
+        {
+            var source = new Parameter(new ElementId(12)) { Definition = { Name = "Qux" }, StorageType = StorageType.String };
+            var identifier = source.ToIdentifier();
+
+            var element = new Element(new ElementId(6));
+            element.Parameters.Add(source);
+            element.Parameters.Add(new Parameter("Qux") { StorageType = StorageType.String });
+
+            var value = element.GetParameterValue(identifier);
+
+            Assert.Null(value);
         }
 
         [Fact]
