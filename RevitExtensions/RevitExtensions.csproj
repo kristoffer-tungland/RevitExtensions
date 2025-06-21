@@ -9,6 +9,7 @@
     <PackageId>RevitExtensions</PackageId>
     <Authors>RevitExtensions</Authors>
     <PackageTags>Revit;API;Extensions</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Default Revit API package versions; overridden when packaging -->
     <RevitApiPackageVersion>2026.0.0</RevitApiPackageVersion>
     <RevitApiPackageVersion Condition="'$(TargetFramework)' == 'net48'">2024.2.0</RevitApiPackageVersion>
@@ -22,6 +23,10 @@
 
   <ItemGroup Condition="'$(UseRevitApiStubs)' == 'true'">
     <ProjectReference Include="..\RevitApiStubs\RevitApiStubs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseRevitApiStubs)' != 'true'">
