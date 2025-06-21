@@ -99,6 +99,32 @@ namespace RevitExtensions
             return new FilteredElementCollector(document)
                 .TypesOf(categories);
         }
+
+        /// <summary>
+        /// Creates and starts a transaction.
+        /// </summary>
+        /// <param name="document">The owning document.</param>
+        /// <param name="name">The transaction name.</param>
+        /// <returns>The started transaction.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="document"/> or <paramref name="name"/> is null.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the transaction fails to start.</exception>
+        public static Transaction StartTransaction(this Document document, string name)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            var transaction = new Transaction(document, name);
+            var status = transaction.Start();
+            if (status != TransactionStatus.Started)
+            {
+                transaction.Dispose();
+                throw new InvalidOperationException("Failed to start transaction.");
+            }
+
+            return transaction;
+        }
     }
 }
 

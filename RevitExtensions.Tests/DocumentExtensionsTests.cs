@@ -1,3 +1,4 @@
+using System;
 using Autodesk.Revit.DB;
 using RevitExtensions;
 using Xunit;
@@ -72,6 +73,39 @@ namespace RevitExtensions.Tests
             Assert.Same(doc, collector.Document);
             Assert.Equal(cats, collector.Categories);
             Assert.True(collector.OnlyElementTypes);
+        }
+
+        [Fact]
+        public void StartTransaction_StartsAndReturnsTransaction()
+        {
+            var doc = new Document();
+
+            using var t = doc.StartTransaction("Foo");
+
+            Assert.Same(doc, t.Document);
+            Assert.Equal("Foo", t.Name);
+            Assert.True(t.IsStarted);
+        }
+
+        [Fact]
+        public void CommitAndEnsure_Committed_DoesNotThrow()
+        {
+            var doc = new Document();
+            using var t = doc.StartTransaction("Foo");
+
+            t.CommitAndEnsure();
+
+            Assert.False(t.IsStarted);
+        }
+
+        [Fact]
+        public void CommitAndEnsure_Failed_Throws()
+        {
+            var doc = new Document();
+            using var t = new Transaction(doc, "Foo");
+
+            var ex = Assert.Throws<InvalidOperationException>(() => t.CommitAndEnsure());
+            Assert.Equal("Failed to commit transaction.", ex.Message);
         }
     }
 }
