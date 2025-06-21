@@ -22,7 +22,7 @@ namespace RevitExtensions
         /// <summary>
         /// Gets the parameter name if the identifier represents one.
         /// </summary>
-        public string Name { get; internal set; }
+        public string? Name { get; internal set; }
 
         /// <summary>
         /// Gets the element id value if the identifier represents one.

@@ -100,7 +100,7 @@ namespace RevitExtensions
             }
         }
 
-        public static bool TryToElementId(object value, out ElementId id)
+        public static bool TryToElementId(object value, out ElementId? id)
         {
             id = null;
             switch (value)
@@ -118,7 +118,7 @@ namespace RevitExtensions
             }
         }
 
-        public static string ToString(object value)
+        public static string? ToString(object value)
         {
             return value switch
             {

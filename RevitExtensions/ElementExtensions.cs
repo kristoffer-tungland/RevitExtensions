@@ -85,7 +85,7 @@ namespace RevitExtensions
         /// </summary>
         /// <param name="element">The element.</param>
         /// <returns>The element type or null if unavailable.</returns>
-        public static Element GetElementType(this Element element)
+        public static Element? GetElementType(this Element element)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
 

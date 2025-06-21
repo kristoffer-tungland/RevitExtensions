@@ -16,7 +16,7 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier string.</param>
         /// <returns>The found parameter or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static Parameter GetParameter(this Element element, string identifier)
+        public static Parameter? GetParameter(this Element element, string identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -31,7 +31,7 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier.</param>
         /// <returns>The found parameter or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static Parameter GetParameter(this Element element, ParameterIdentifier identifier)
+        public static Parameter? GetParameter(this Element element, ParameterIdentifier identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -92,7 +92,7 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier.</param>
         /// <returns>The found parameter or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static Parameter LookupParameter(this Element element, ParameterIdentifier identifier)
+        public static Parameter? LookupParameter(this Element element, ParameterIdentifier identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -112,7 +112,7 @@ namespace RevitExtensions
             return null;
         }
 
-        public static Parameter LookupParameter(this Element element, string identifier)
+        public static Parameter? LookupParameter(this Element element, string identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -127,7 +127,7 @@ namespace RevitExtensions
         /// <typeparam name="T">The desired return type.</typeparam>
         /// <returns>The parameter value or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
-        public static object GetParameterValue(this Parameter parameter)
+        public static object? GetParameterValue(this Parameter parameter)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
 
@@ -167,7 +167,7 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier string.</param>
         /// <returns>The parameter value or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static object GetParameterValue(this Element element, string identifier)
+        public static object? GetParameterValue(this Element element, string identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -182,7 +182,7 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier.</param>
         /// <returns>The parameter value or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static object GetParameterValue(this Element element, ParameterIdentifier identifier)
+        public static object? GetParameterValue(this Element element, ParameterIdentifier identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -238,7 +238,7 @@ namespace RevitExtensions
         /// <param name="element">The element.</param>
         /// <param name="identifier">The parameter identifier string.</param>
         /// <returns>The parameter value or null.</returns>
-        public static object LookupParameterValue(this Element element, string identifier)
+        public static object? LookupParameterValue(this Element element, string identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -253,7 +253,7 @@ namespace RevitExtensions
         /// <param name="element">The element.</param>
         /// <param name="identifier">The parameter identifier.</param>
         /// <returns>The parameter value or null.</returns>
-        public static object LookupParameterValue(this Element element, ParameterIdentifier identifier)
+        public static object? LookupParameterValue(this Element element, ParameterIdentifier identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -339,7 +339,7 @@ namespace RevitExtensions
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
-        public static bool TrySetParameterValue(this Parameter parameter, object value, out string reason)
+        public static bool TrySetParameterValue(this Parameter parameter, object value, out string? reason)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
 
@@ -446,7 +446,7 @@ namespace RevitExtensions
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static bool TrySetParameterValue(this Element element, string identifier, object value, out string reason)
+        public static bool TrySetParameterValue(this Element element, string identifier, object value, out string? reason)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
@@ -463,7 +463,7 @@ namespace RevitExtensions
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static bool TrySetParameterValue(this Element element, ParameterIdentifier identifier, object value, out string reason)
+        public static bool TrySetParameterValue(this Element element, ParameterIdentifier identifier, object value, out string? reason)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
