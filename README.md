@@ -2,6 +2,25 @@
 
 This repository contains helper extensions for the Autodesk Revit API. The goal is to make it easier to use APIs across Revit versions. One important helper is retrieving an element id as a `long` value regardless of the Revit release. The library depends on the `Revit_All_Main_Versions_API_x64` NuGet package and builds against either .NET Framework 4.8 or .NET 8 depending on the Revit version. A tiny `RevitApiStubs` project is included for unit tests so they can run without Autodesk binaries.
 
+## Usage examples
+
+```csharp
+using Autodesk.Revit.DB;
+using RevitExtensions;
+
+// start a transaction and update a parameter
+using var tx = document.StartTransaction("Set parameter");
+element.SetParameterValue("Comments", "Hello");
+tx.CommitAndEnsure();
+
+// get all wall instances in the document
+var walls = document.InstancesOf<Wall>().ToElements();
+
+// retrieve an element id as a long
+long id = element.GetElementIdValue();
+```
+
+
 ## Building packages
 
 Use [NUKE](https://nuke.build) to build and package the project. Compile all
@@ -77,20 +96,3 @@ The library exposes helpers for common Revit API patterns.
 Represents a parameter by name, GUID, built‑in parameter or element id. It can
 be parsed from a string and provides a stable representation.
 
-### Usage examples
-
-```csharp
-using Autodesk.Revit.DB;
-using RevitExtensions;
-
-// start a transaction and update a parameter
-using var tx = document.StartTransaction("Set parameter");
-element.SetParameterValue("Comments", "Hello");
-tx.CommitAndEnsure();
-
-// get all wall instances in the document
-var walls = document.InstancesOf<Wall>().ToElements();
-
-// retrieve an element id as a long
-long id = element.GetElementIdValue();
-```
