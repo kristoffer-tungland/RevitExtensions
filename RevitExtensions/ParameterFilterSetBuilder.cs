@@ -86,6 +86,18 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Adds a nested OR set configured via a callback.
+        /// </summary>
+        public ParameterFilterSetBuilder AddOr(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
+        {
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
+            var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
+            var result = configure(nested) ?? nested;
+            return AddSet(result);
+        }
+
+        /// <summary>
         /// Adds a nested OR set for a single parameter with multiple values.
         /// </summary>
         public ParameterFilterSetBuilder AddOr(ElementId parameterId, StringComparison comparison, IEnumerable<string> values)
@@ -153,6 +165,18 @@ namespace RevitExtensions
                 nested.AddRule(parameterId, comparison, value);
             }
             return AddSet(nested);
+        }
+
+        /// <summary>
+        /// Adds a nested AND set configured via a callback.
+        /// </summary>
+        public ParameterFilterSetBuilder AddAnd(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
+        {
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
+            var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
+            var result = configure(nested) ?? nested;
+            return AddSet(result);
         }
 
         /// <summary>

@@ -49,6 +49,18 @@ var complex = new FilteredElementCollector(document)
             (new ElementId(20), StringComparison.Equals, "B"))
         .AddRule(new ElementId(21), StringComparison.Equals, "C"))
     .ToElements();
+
+// multiple levels of nested sets
+var nested = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .Where(b => b
+        .AddOr(or => or
+            .AddRule(new ElementId(30), StringComparison.Equals, "A")
+            .AddAnd(and => and
+                .AddRule(new ElementId(31), StringComparison.Equals, "B")
+                .AddRule(new ElementId(32), StringComparison.Equals, "C")))
+        .AddRule(new ElementId(33), StringComparison.Equals, "D"))
+    .ToElements();
 ```
 
 

@@ -371,6 +371,54 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void Where_BuilderNestedSets_ComposesFilters()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(60));
+            var p1a = new Parameter(new ElementId(80)) { StorageType = StorageType.String };
+            p1a.Set("A");
+            e1.Parameters.Add(p1a);
+            var p1b = new Parameter(new ElementId(81)) { StorageType = StorageType.String };
+            p1b.Set("B");
+            e1.Parameters.Add(p1b);
+            var p1c = new Parameter(new ElementId(82)) { StorageType = StorageType.String };
+            p1c.Set("C");
+            e1.Parameters.Add(p1c);
+            var p1d = new Parameter(new ElementId(83)) { StorageType = StorageType.String };
+            p1d.Set("D");
+            e1.Parameters.Add(p1d);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(61));
+            var p2a = new Parameter(new ElementId(80)) { StorageType = StorageType.String };
+            p2a.Set("A");
+            e2.Parameters.Add(p2a);
+            var p2b = new Parameter(new ElementId(81)) { StorageType = StorageType.String };
+            p2b.Set("X");
+            e2.Parameters.Add(p2b);
+            var p2c = new Parameter(new ElementId(82)) { StorageType = StorageType.String };
+            p2c.Set("Y");
+            e2.Parameters.Add(p2c);
+            var p2d = new Parameter(new ElementId(83)) { StorageType = StorageType.String };
+            p2d.Set("E");
+            e2.Parameters.Add(p2d);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(b => b
+                .AddOr(or => or
+                    .AddRule(new ElementId(80), StringComparison.Equals, "A")
+                    .AddAnd(and => and
+                        .AddRule(new ElementId(81), StringComparison.Equals, "B")
+                        .AddRule(new ElementId(82), StringComparison.Equals, "C")))
+                .AddRule(new ElementId(83), StringComparison.Equals, "D"));
+
+            Assert.Same(collector, filtered);
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
         public void Where_BuiltInParameter_UsesEnum()
         {
             var doc = new Document();
