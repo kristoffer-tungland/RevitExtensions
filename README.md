@@ -115,6 +115,9 @@ The library exposes helpers for common Revit API patterns.
 - `InstancesOf<T>()` / `TypesOf<T>()` – create a `FilteredElementCollector` for
   element instances or types.
 - Overloads allow filtering by a `BuiltInCategory` or multiple categories.
+- `GetElement()` overloads retrieve an element by id (`ElementId`, `int` or `long`).
+  Generic versions cast the result to the specified element type and may return
+  `null` when the id does not exist.
 - `StartTransaction`, `StartTransactionGroup` and `StartSubTransaction` start
   the respective transaction object and ensure it began successfully.
 
@@ -159,6 +162,7 @@ The library exposes helpers for common Revit API patterns.
 ### BuiltInParameterExtensions
 
 - `ToElementId()` – convert a built-in parameter enum value to its corresponding `ElementId`.
+- `int` and `long` also provide `ToElementId()` helpers.
 
 ### TransactionExtensions
 

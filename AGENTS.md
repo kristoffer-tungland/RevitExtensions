@@ -24,3 +24,4 @@ Use `using var` with elements, parameters, and any other `IDisposable` objects w
 To account for API differences across Revit versions, conditional compilation symbols may be used. Symbols follow the pattern `REVIT20xx`, `REVIT20xx_OR_ABOVE`, and `REVIT20xx_OR_LESS` and can be combined to include or exclude code for specific main releases.
 
 All projects should enable C# nullable reference types by setting `<Nullable>enable</Nullable>` in the project file. Methods, properties and fields must be annotated with `?` when they can contain `null`.
+Extension methods that wrap Revit API calls should reflect the API's nullability. If `Document.GetElement` might return `null`, your wrapper should return `Element?`.
