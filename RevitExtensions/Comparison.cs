@@ -28,6 +28,10 @@ namespace RevitExtensions
         NotBeginsWith = 103,
         EndsWith = 104,
         NotEndsWith = 105,
+        /// <summary>
+        /// Matches a value using '*' wildcard segments.
+        /// </summary>
+        Wildcard = 200,
         Greater = Comparison.Greater,
         GreaterOrEqual = Comparison.GreaterOrEqual,
         Less = Comparison.Less,

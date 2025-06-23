@@ -9,6 +9,32 @@ namespace RevitExtensions
     public static class FilteredElementCollectorExtensions
     {
         /// <summary>
+        /// Filters the collector to include only element instances.
+        /// </summary>
+        /// <param name="collector">The collector to filter.</param>
+        /// <returns>The filtered collector.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="collector"/> is null.</exception>
+        public static FilteredElementCollector Instances(this FilteredElementCollector collector)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+
+            return collector.WhereElementIsNotElementType();
+        }
+
+        /// <summary>
+        /// Filters the collector to include only element types.
+        /// </summary>
+        /// <param name="collector">The collector to filter.</param>
+        /// <returns>The filtered collector.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="collector"/> is null.</exception>
+        public static FilteredElementCollector Types(this FilteredElementCollector collector)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+
+            return collector.WhereElementIsElementType();
+        }
+
+        /// <summary>
         /// Filters the collector for instances of the specified type.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>

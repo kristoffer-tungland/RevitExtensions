@@ -40,6 +40,26 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void Instances_FiltersCollector()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc)
+                .Instances();
+
+            Assert.True(collector.ExcludesElementTypes);
+        }
+
+        [Fact]
+        public void Types_FiltersCollector()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc)
+                .Types();
+
+            Assert.True(collector.OnlyElementTypes);
+        }
+
+        [Fact]
         public void TypesOf_MultiCategories_FiltersCollector()
         {
             var doc = new Document();
@@ -461,7 +481,7 @@ namespace RevitExtensions.Tests
             e2.Parameters.Add(p2);
             collector.AddElement(e2);
 
-            var filtered = collector.Where(new ElementId(90), StringComparison.Equals, "foo*bar");
+            var filtered = collector.Where(new ElementId(90), StringComparison.Wildcard, "foo*bar");
 
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
         }
@@ -484,7 +504,7 @@ namespace RevitExtensions.Tests
             e2.Parameters.Add(p2);
             collector.AddElement(e2);
 
-            var filtered = collector.Where(new ElementId(91), StringComparison.Equals, "foo*is*bar");
+            var filtered = collector.Where(new ElementId(91), StringComparison.Wildcard, "foo*is*bar");
 
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
         }
