@@ -149,6 +149,516 @@ namespace RevitExtensions
                 (enumerator as IDisposable)?.Dispose();
             }
         }
+
+        /// <summary>
+        /// Filters the collector by comparing a parameter value.
+        /// </summary>
+        /// <param name="collector">The collector to filter.</param>
+        /// <param name="parameterId">The element id of the parameter.</param>
+        /// <param name="comparison">The comparison type.</param>
+        /// <param name="value">The comparison value.</param>
+        /// <returns>The same collector instance.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="collector"/> or <paramref name="parameterId"/> or <paramref name="value"/> is null.
+        /// </exception>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            StringComparison comparison,
+            string value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            var filter = CreateFilter(parameterId, comparison, value);
+            if (filter != null)
+            {
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing a parameter value using a built-in parameter.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            BuiltInParameter parameter,
+            StringComparison comparison,
+            string value)
+        {
+            return collector.Where(parameter.ToElementId(), comparison, value);
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an integer parameter value.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            int value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+
+            var filter = CreateFilter(parameterId, comparison, value);
+            if (filter != null)
+            {
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an integer parameter value using a built-in parameter.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            BuiltInParameter parameter,
+            Comparison comparison,
+            int value)
+        {
+            return collector.Where(parameter.ToElementId(), comparison, value);
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing a double parameter value.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            double value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+
+            var filter = CreateFilter(parameterId, comparison, value);
+            if (filter != null)
+            {
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing a double parameter value using a built-in parameter.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            BuiltInParameter parameter,
+            Comparison comparison,
+            double value)
+        {
+            return collector.Where(parameter.ToElementId(), comparison, value);
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an element id parameter value.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            ElementId value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            var filter = CreateFilter(parameterId, comparison, value);
+            if (filter != null)
+            {
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an element id parameter value using a built-in parameter.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            BuiltInParameter parameter,
+            Comparison comparison,
+            ElementId value)
+        {
+            return collector.Where(parameter.ToElementId(), comparison, value);
+        }
+
+        // Removed overloads taking ParameterIdentifier or string to simplify API
+
+        /// <summary>
+        /// Filters the collector using a logical OR of several parameter comparisons.
+        /// </summary>
+        public static FilteredElementCollector WhereOr(
+            this FilteredElementCollector collector,
+            params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (conditions == null) throw new ArgumentNullException(nameof(conditions));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var (parameterId, comparison, value) in conditions)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(value));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalOrFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical OR of several values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereOr(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            StringComparison comparison,
+            System.Collections.Generic.IEnumerable<string> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(values));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalOrFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical AND of several parameter comparisons.
+        /// </summary>
+        public static FilteredElementCollector WhereAnd(
+            this FilteredElementCollector collector,
+            params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (conditions == null) throw new ArgumentNullException(nameof(conditions));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var (parameterId, comparison, value) in conditions)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(value));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalAndFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical AND of several values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereAnd(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            StringComparison comparison,
+            System.Collections.Generic.IEnumerable<string> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(values));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalAndFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical OR of several integer values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereOr(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<int> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalOrFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical AND of several integer values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereAnd(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<int> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalAndFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical OR of several double values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereOr(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<double> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalOrFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical AND of several double values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereAnd(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<double> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalAndFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical OR of several element id values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereOr(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<ElementId> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(values));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalOrFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Filters the collector using a logical AND of several element id values for a single parameter.
+        /// </summary>
+        public static FilteredElementCollector WhereAnd(
+            this FilteredElementCollector collector,
+            ElementId parameterId,
+            Comparison comparison,
+            System.Collections.Generic.IEnumerable<ElementId> values)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+            foreach (var value in values)
+            {
+                if (value == null) throw new ArgumentNullException(nameof(values));
+                var filter = CreateFilter(parameterId, comparison, value);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count > 0)
+            {
+                var filter = new LogicalAndFilter(filters);
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        private static ElementParameterFilter? CreateFilter(ElementId parameterId, StringComparison comparison, string value)
+            => ParameterFilterRuleBuilder.CreateFilter(parameterId, comparison, value);
+
+        private static ElementParameterFilter? CreateFilter(ElementId parameterId, Comparison comparison, int value)
+            => ParameterFilterRuleBuilder.CreateFilter(parameterId, comparison, value);
+
+        private static ElementParameterFilter? CreateFilter(ElementId parameterId, Comparison comparison, double value)
+            => ParameterFilterRuleBuilder.CreateFilter(parameterId, comparison, value);
+
+        private static ElementParameterFilter? CreateFilter(ElementId parameterId, Comparison comparison, ElementId value)
+            => ParameterFilterRuleBuilder.CreateFilter(parameterId, comparison, value);
+
+        /// <summary>
+        /// Applies a complex set of parameter filters built from nested
+        /// <see cref="ParameterFilterSet"/> instances.
+        /// </summary>
+        /// <param name="collector">The collector to filter.</param>
+        /// <param name="filterSet">The filter set to apply.</param>
+        /// <returns>The same collector instance.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="collector"/> or <paramref name="filterSet"/> is null.
+        /// </exception>
+        public static FilteredElementCollector WherePasses(
+            this FilteredElementCollector collector,
+            ParameterFilterSet filterSet)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (filterSet == null) throw new ArgumentNullException(nameof(filterSet));
+
+            var filter = filterSet.ToFilter();
+            if (filter != null)
+            {
+                collector.WherePasses(filter);
+            }
+
+            return collector;
+        }
+
+        /// <summary>
+        /// Builds a <see cref="ParameterFilterSet"/> using a builder callback
+        /// and applies it to the collector.
+        /// </summary>
+        /// <param name="collector">The collector to filter.</param>
+        /// <param name="configure">Callback used to add rules to a builder.</param>
+        /// <returns>The same collector instance.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="collector"/> or <paramref name="configure"/> is null.
+        /// </exception>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            System.Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
+            var builder = new ParameterFilterSetBuilder();
+            var result = configure(builder) ?? builder;
+            var set = result.Build();
+            return collector.WherePasses(set);
+        }
+
+        // parameter lookup helpers removed for simplicity
+
+
+
     }
 }
 
