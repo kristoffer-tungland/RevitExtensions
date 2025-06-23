@@ -112,7 +112,7 @@ namespace RevitExtensions
             if (document == null) throw new ArgumentNullException(nameof(document));
             if (id == null) throw new ArgumentNullException(nameof(id));
 
-            return document.GetElement(id);
+            return id.ToElement(document);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace RevitExtensions
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
 
-            return document.GetElement(id.ToElementId());
+            return id.ToElementId().ToElement(document);
         }
 
         /// <summary>
@@ -140,7 +140,7 @@ namespace RevitExtensions
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
 
-            return document.GetElement(id.ToElementId());
+            return id.ToElementId().ToElement(document);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace RevitExtensions
             if (document == null) throw new ArgumentNullException(nameof(document));
             if (id == null) throw new ArgumentNullException(nameof(id));
 
-            return document.GetElement(id) as T;
+            return id.ToElement<T>(document);
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace RevitExtensions
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
 
-            return document.GetElement(id.ToElementId()) as T;
+            return id.ToElementId().ToElement<T>(document);
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace RevitExtensions
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
 
-            return document.GetElement(id.ToElementId()) as T;
+            return id.ToElementId().ToElement<T>(document);
         }
 
         /// <summary>

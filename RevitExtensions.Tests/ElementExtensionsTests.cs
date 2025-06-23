@@ -93,5 +93,44 @@ namespace RevitExtensions.Tests
             using var type = element.GetElementType();
             Assert.Null(type);
         }
+
+        [Fact]
+        public void ToElement_ReturnsElementFromDocument()
+        {
+            var doc = new Document();
+            var id = new ElementId(11);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = id.ToElement(doc);
+
+            Assert.Same(element, result);
+        }
+
+        [Fact]
+        public void ToElement_Generic_ReturnsTypedElement()
+        {
+            var doc = new Document();
+            var id = new ElementId(12);
+            var wall = new Wall(id);
+            doc.AddElement(wall);
+
+            var result = id.ToElement<Wall>(doc);
+
+            Assert.Same(wall, result);
+        }
+
+        [Fact]
+        public void ToElement_Generic_WrongType_ReturnsNull()
+        {
+            var doc = new Document();
+            var id = new ElementId(13);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = id.ToElement<Wall>(doc);
+
+            Assert.Null(result);
+        }
     }
 }

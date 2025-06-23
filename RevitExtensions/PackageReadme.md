@@ -40,6 +40,8 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 ### ElementExtensions
 
 - `GetElementIdValue()` – returns the element id as a `long` regardless of Revit version.
+- `ToElement()` – retrieve an element from a document by id. Generic overload
+  casts the result to the specified element type.
 - `CanEdit(out EditStatus)` – determines if the element can be edited in the current workshared document.
 - `GetElementType()` – retrieves the element's type element.
 
