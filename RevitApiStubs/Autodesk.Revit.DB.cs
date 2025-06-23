@@ -15,6 +15,28 @@ namespace Autodesk.Revit.DB
         public int IntegerValue { get; }
         public ElementId(int value) => IntegerValue = value;
 #endif
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is ElementId other)
+            {
+#if REVIT2024_OR_ABOVE
+                return Value == other.Value;
+#else
+                return IntegerValue == other.IntegerValue;
+#endif
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+#if REVIT2024_OR_ABOVE
+            return Value.GetHashCode();
+#else
+            return IntegerValue.GetHashCode();
+#endif
+        }
     }
 
     /// <summary>
@@ -111,6 +133,11 @@ namespace Autodesk.Revit.DB
 
         private readonly System.Collections.Generic.Dictionary<ElementId, string> _owners = new System.Collections.Generic.Dictionary<ElementId, string>();
         private readonly System.Collections.Generic.Dictionary<long, Element> _elements = new System.Collections.Generic.Dictionary<long, Element>();
+
+        /// <summary>
+        /// Gets the parameter bindings in the document keyed by parameter name.
+        /// </summary>
+        public BindingMap ParameterBindings { get; } = new BindingMap();
 
         public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
 
@@ -216,6 +243,18 @@ namespace Autodesk.Revit.DB
             return this;
         }
 
+        public FilteredElementCollector WherePasses(ElementParameterFilter filter)
+        {
+            return WherePasses((ElementFilter)filter);
+        }
+
+        public FilteredElementCollector WherePasses(ElementFilter filter)
+        {
+            if (filter == null) throw new ArgumentNullException(nameof(filter));
+            _elements.RemoveAll(e => !filter.PassesFilter(e));
+            return this;
+        }
+
         public FilteredElementCollector WhereElementIsNotElementType()
         {
             ExcludesElementTypes = true;
@@ -318,6 +357,7 @@ namespace Autodesk.Revit.DB
         public Parameter(BuiltInParameter bip)
         {
             BuiltInParameter = bip;
+            Id = new ElementId((int)bip);
             Definition = new Definition { Name = bip.ToString() };
         }
 
@@ -398,6 +438,509 @@ namespace Autodesk.Revit.DB
 
     public class ParameterSet : System.Collections.Generic.List<Parameter>
     {
+    }
+
+    /// <summary>
+    /// Simple map of parameter names to ids used to simulate Document.ParameterBindings.
+    /// </summary>
+    public class BindingMap : System.Collections.Generic.Dictionary<string, ElementId>
+    {
+        public BindingMap() : base(System.StringComparer.OrdinalIgnoreCase) { }
+    }
+
+    /// <summary>
+    /// Base class for element filters used by <see cref="FilteredElementCollector"/>.
+    /// </summary>
+    public abstract class ElementFilter
+    {
+        public abstract bool PassesFilter(Element element);
+    }
+
+    /// <summary>
+    /// Base class for parameter filter rules.
+    /// </summary>
+    public abstract class FilterRule
+    {
+        public ElementId ParameterId { get; }
+
+        protected FilterRule(ElementId parameterId)
+        {
+            ParameterId = parameterId;
+        }
+
+        public abstract bool Evaluate(Element element);
+    }
+
+    /// <summary>
+    /// Factory creating parameter filter rules.
+    /// </summary>
+    public static class ParameterFilterRuleFactory
+    {
+        private abstract class StringRule : FilterRule
+        {
+            protected readonly string Value;
+
+            protected StringRule(ElementId id, string value) : base(id)
+            {
+                Value = value;
+            }
+
+            protected string? Get(Element element)
+            {
+                using var param = element.get_Parameter(ParameterId);
+                return param?.AsString();
+            }
+        }
+
+        private class EqualsRule : StringRule
+        {
+            public EqualsRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return string.Equals(s, Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class NotEqualsRule : StringRule
+        {
+            public NotEqualsRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return !string.Equals(s, Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class ContainsRule : StringRule
+        {
+            public ContainsRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s != null && s.IndexOf(Value, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+        }
+
+        private class NotContainsRule : StringRule
+        {
+            public NotContainsRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s == null || s.IndexOf(Value, System.StringComparison.OrdinalIgnoreCase) < 0;
+            }
+        }
+
+        private class BeginsWithRule : StringRule
+        {
+            public BeginsWithRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s != null && s.StartsWith(Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class NotBeginsWithRule : StringRule
+        {
+            public NotBeginsWithRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s == null || !s.StartsWith(Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class EndsWithRule : StringRule
+        {
+            public EndsWithRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s != null && s.EndsWith(Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class NotEndsWithRule : StringRule
+        {
+            public NotEndsWithRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return s == null || !s.EndsWith(Value, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private class GreaterRule : StringRule
+        {
+            public GreaterRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return string.Compare(s, Value, System.StringComparison.OrdinalIgnoreCase) > 0;
+            }
+        }
+
+        private class GreaterOrEqualRule : StringRule
+        {
+            public GreaterOrEqualRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return string.Compare(s, Value, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+        }
+
+        private class LessRule : StringRule
+        {
+            public LessRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return string.Compare(s, Value, System.StringComparison.OrdinalIgnoreCase) < 0;
+            }
+        }
+
+        private class LessOrEqualRule : StringRule
+        {
+            public LessOrEqualRule(ElementId id, string value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var s = Get(element);
+                return string.Compare(s, Value, System.StringComparison.OrdinalIgnoreCase) <= 0;
+            }
+        }
+
+        public static FilterRule CreateEqualsRule(ElementId parameter, string value) => new EqualsRule(parameter, value);
+        public static FilterRule CreateEqualsRule(ElementId parameter, string value, bool caseSensitive) => new EqualsRule(parameter, value);
+        public static FilterRule CreateNotEqualsRule(ElementId parameter, string value) => new NotEqualsRule(parameter, value);
+        public static FilterRule CreateNotEqualsRule(ElementId parameter, string value, bool caseSensitive) => new NotEqualsRule(parameter, value);
+        public static FilterRule CreateContainsRule(ElementId parameter, string value) => new ContainsRule(parameter, value);
+        public static FilterRule CreateContainsRule(ElementId parameter, string value, bool caseSensitive) => new ContainsRule(parameter, value);
+        public static FilterRule CreateNotContainsRule(ElementId parameter, string value) => new NotContainsRule(parameter, value);
+        public static FilterRule CreateNotContainsRule(ElementId parameter, string value, bool caseSensitive) => new NotContainsRule(parameter, value);
+        public static FilterRule CreateBeginsWithRule(ElementId parameter, string value) => new BeginsWithRule(parameter, value);
+        public static FilterRule CreateBeginsWithRule(ElementId parameter, string value, bool caseSensitive) => new BeginsWithRule(parameter, value);
+        public static FilterRule CreateNotBeginsWithRule(ElementId parameter, string value) => new NotBeginsWithRule(parameter, value);
+        public static FilterRule CreateNotBeginsWithRule(ElementId parameter, string value, bool caseSensitive) => new NotBeginsWithRule(parameter, value);
+        public static FilterRule CreateEndsWithRule(ElementId parameter, string value) => new EndsWithRule(parameter, value);
+        public static FilterRule CreateEndsWithRule(ElementId parameter, string value, bool caseSensitive) => new EndsWithRule(parameter, value);
+        public static FilterRule CreateNotEndsWithRule(ElementId parameter, string value) => new NotEndsWithRule(parameter, value);
+        public static FilterRule CreateNotEndsWithRule(ElementId parameter, string value, bool caseSensitive) => new NotEndsWithRule(parameter, value);
+        public static FilterRule CreateGreaterRule(ElementId parameter, string value) => new GreaterRule(parameter, value);
+        public static FilterRule CreateGreaterRule(ElementId parameter, string value, bool caseSensitive) => new GreaterRule(parameter, value);
+        public static FilterRule CreateGreaterOrEqualRule(ElementId parameter, string value) => new GreaterOrEqualRule(parameter, value);
+        public static FilterRule CreateGreaterOrEqualRule(ElementId parameter, string value, bool caseSensitive) => new GreaterOrEqualRule(parameter, value);
+        public static FilterRule CreateLessRule(ElementId parameter, string value) => new LessRule(parameter, value);
+        public static FilterRule CreateLessRule(ElementId parameter, string value, bool caseSensitive) => new LessRule(parameter, value);
+        public static FilterRule CreateLessOrEqualRule(ElementId parameter, string value) => new LessOrEqualRule(parameter, value);
+        public static FilterRule CreateLessOrEqualRule(ElementId parameter, string value, bool caseSensitive) => new LessOrEqualRule(parameter, value);
+
+        private abstract class IntRule : FilterRule
+        {
+            protected readonly int Value;
+
+            protected IntRule(ElementId id, int value) : base(id)
+            {
+                Value = value;
+            }
+
+            protected int? Get(Element element)
+            {
+                using var param = element.get_Parameter(ParameterId);
+                return param?.AsInteger();
+            }
+        }
+
+        private class IntEqualsRule : IntRule
+        {
+            public IntEqualsRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                return Get(element) == Value;
+            }
+        }
+
+        private class IntNotEqualsRule : IntRule
+        {
+            public IntNotEqualsRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                return Get(element) != Value;
+            }
+        }
+
+        private class IntGreaterRule : IntRule
+        {
+            public IntGreaterRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value > Value;
+            }
+        }
+
+        private class IntGreaterOrEqualRule : IntRule
+        {
+            public IntGreaterOrEqualRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value >= Value;
+            }
+        }
+
+        private class IntLessRule : IntRule
+        {
+            public IntLessRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value < Value;
+            }
+        }
+
+        private class IntLessOrEqualRule : IntRule
+        {
+            public IntLessOrEqualRule(ElementId id, int value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value <= Value;
+            }
+        }
+
+        public static FilterRule CreateEqualsRule(ElementId parameter, int value) => new IntEqualsRule(parameter, value);
+        public static FilterRule CreateNotEqualsRule(ElementId parameter, int value) => new IntNotEqualsRule(parameter, value);
+        public static FilterRule CreateGreaterRule(ElementId parameter, int value) => new IntGreaterRule(parameter, value);
+        public static FilterRule CreateGreaterOrEqualRule(ElementId parameter, int value) => new IntGreaterOrEqualRule(parameter, value);
+        public static FilterRule CreateLessRule(ElementId parameter, int value) => new IntLessRule(parameter, value);
+        public static FilterRule CreateLessOrEqualRule(ElementId parameter, int value) => new IntLessOrEqualRule(parameter, value);
+
+        private abstract class DoubleRule : FilterRule
+        {
+            protected readonly double Value;
+            protected readonly double Tolerance;
+
+            protected DoubleRule(ElementId id, double value, double tolerance) : base(id)
+            {
+                Value = value;
+                Tolerance = tolerance;
+            }
+
+            protected double? Get(Element element)
+            {
+                using var param = element.get_Parameter(ParameterId);
+                return param?.AsDouble();
+            }
+        }
+
+        private class DoubleEqualsRule : DoubleRule
+        {
+            public DoubleEqualsRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && System.Math.Abs(v.Value - Value) <= Tolerance;
+            }
+        }
+
+        private class DoubleNotEqualsRule : DoubleRule
+        {
+            public DoubleNotEqualsRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return !v.HasValue || System.Math.Abs(v.Value - Value) > Tolerance;
+            }
+        }
+
+        private class DoubleGreaterRule : DoubleRule
+        {
+            public DoubleGreaterRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value > Value;
+            }
+        }
+
+        private class DoubleGreaterOrEqualRule : DoubleRule
+        {
+            public DoubleGreaterOrEqualRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value >= Value;
+            }
+        }
+
+        private class DoubleLessRule : DoubleRule
+        {
+            public DoubleLessRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value < Value;
+            }
+        }
+
+        private class DoubleLessOrEqualRule : DoubleRule
+        {
+            public DoubleLessOrEqualRule(ElementId id, double value, double tol) : base(id, value, tol) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v.HasValue && v.Value <= Value;
+            }
+        }
+
+        public static FilterRule CreateEqualsRule(ElementId parameter, double value, double tolerance) => new DoubleEqualsRule(parameter, value, tolerance);
+        public static FilterRule CreateNotEqualsRule(ElementId parameter, double value, double tolerance) => new DoubleNotEqualsRule(parameter, value, tolerance);
+        public static FilterRule CreateGreaterRule(ElementId parameter, double value, double tolerance) => new DoubleGreaterRule(parameter, value, tolerance);
+        public static FilterRule CreateGreaterOrEqualRule(ElementId parameter, double value, double tolerance) => new DoubleGreaterOrEqualRule(parameter, value, tolerance);
+        public static FilterRule CreateLessRule(ElementId parameter, double value, double tolerance) => new DoubleLessRule(parameter, value, tolerance);
+        public static FilterRule CreateLessOrEqualRule(ElementId parameter, double value, double tolerance) => new DoubleLessOrEqualRule(parameter, value, tolerance);
+
+        private abstract class ElementIdRule : FilterRule
+        {
+            protected readonly ElementId Value;
+
+            protected ElementIdRule(ElementId id, ElementId valueId) : base(id)
+            {
+                Value = valueId;
+            }
+
+            protected ElementId? Get(Element element)
+            {
+                using var param = element.get_Parameter(ParameterId);
+                return param?.AsElementId();
+            }
+        }
+
+        private class IdEqualsRule : ElementIdRule
+        {
+            public IdEqualsRule(ElementId id, ElementId value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v != null && v.Equals(Value);
+            }
+        }
+
+        private class IdNotEqualsRule : ElementIdRule
+        {
+            public IdNotEqualsRule(ElementId id, ElementId value) : base(id, value) { }
+
+            public override bool Evaluate(Element element)
+            {
+                var v = Get(element);
+                return v == null || !v.Equals(Value);
+            }
+        }
+
+        public static FilterRule CreateEqualsRule(ElementId parameter, ElementId value) => new IdEqualsRule(parameter, value);
+        public static FilterRule CreateNotEqualsRule(ElementId parameter, ElementId value) => new IdNotEqualsRule(parameter, value);
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.ElementParameterFilter.
+    /// </summary>
+    public class ElementParameterFilter : ElementFilter
+    {
+        private readonly System.Collections.Generic.IList<FilterRule> _rules;
+
+        public ElementParameterFilter(FilterRule rule)
+        {
+            _rules = new[] { rule };
+        }
+
+        public ElementParameterFilter(System.Collections.Generic.IList<FilterRule> rules)
+        {
+            _rules = rules;
+        }
+
+        public override bool PassesFilter(Element element)
+        {
+            foreach (var rule in _rules)
+            {
+                if (!rule.Evaluate(element))
+                    return false;
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.LogicalOrFilter.
+    /// </summary>
+    public class LogicalOrFilter : ElementFilter
+    {
+        public System.Collections.Generic.IList<ElementFilter> Filters { get; }
+
+        public LogicalOrFilter(System.Collections.Generic.IList<ElementFilter> filters)
+        {
+            Filters = filters;
+        }
+
+        public override bool PassesFilter(Element element)
+        {
+            foreach (var filter in Filters)
+            {
+                if (filter.PassesFilter(element))
+                    return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.LogicalAndFilter.
+    /// </summary>
+    public class LogicalAndFilter : ElementFilter
+    {
+        public System.Collections.Generic.IList<ElementFilter> Filters { get; }
+
+        public LogicalAndFilter(System.Collections.Generic.IList<ElementFilter> filters)
+        {
+            Filters = filters;
+        }
+
+        public override bool PassesFilter(Element element)
+        {
+            foreach (var filter in Filters)
+            {
+                if (!filter.PassesFilter(element))
+                    return false;
+            }
+            return true;
+        }
     }
 
     /// <summary>

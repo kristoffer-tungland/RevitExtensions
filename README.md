@@ -18,6 +18,37 @@ var walls = document.InstancesOf<Wall>().ToElements();
 
 // retrieve an element id as a long
 long id = element.GetElementIdValue();
+
+// filter walls by a parameter value
+var exteriorWalls = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .Where(new ElementId(10), StringComparison.Equals, "Exterior")
+    .ToElements();
+
+// combine multiple rules
+var fireConcrete = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .WhereAnd(
+        (new ElementId(20), StringComparison.Contains, "Fire"),
+        (new ElementId(21), StringComparison.Equals, "Concrete"))
+    .ToElements();
+
+// filter by multiple values for one parameter
+var codes = new[] { "A", "B" };
+var multi = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .WhereOr(new ElementId(20), StringComparison.Equals, codes)
+    .ToElements();
+
+// combine sets of filters
+var complex = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .Where(b => b
+        .AddOr(
+            (new ElementId(20), StringComparison.Equals, "A"),
+            (new ElementId(20), StringComparison.Equals, "B"))
+        .AddRule(new ElementId(21), StringComparison.Equals, "C"))
+    .ToElements();
 ```
 
 
@@ -70,6 +101,22 @@ The library exposes helpers for common Revit API patterns.
 - Overloads filter by a category or multiple categories.
 - `ForEach(Action<Element>)` – enumerates the collector and disposes each
   element after the action executes.
+- `Where(ElementId, StringComparison, string)` – filter by a string parameter value.
+- `Where(BuiltInParameter, StringComparison, string)` – filter by a string parameter using a built-in id.
+- `Where(ElementId, Comparison, int)` – filter by an integer parameter value.
+- `Where(BuiltInParameter, Comparison, int)` – filter an integer parameter using a built-in id.
+- `Where(ElementId, Comparison, double)` – filter by a double parameter value.
+- `Where(BuiltInParameter, Comparison, double)` – filter a double parameter using a built-in id.
+- `Where(ElementId, Comparison, ElementId)` – filter by an element id parameter value.
+- `Where(BuiltInParameter, Comparison, ElementId)` – filter an element id parameter using a built-in id.
+- `WhereOr((ElementId, StringComparison, string)[])` – combine rules with logical OR.
+- `WhereAnd((ElementId, StringComparison, string)[])` – combine rules with logical AND.
+- `WhereOr(ElementId, StringComparison, IEnumerable<string>)` – combine values with OR for a single parameter.
+- `WhereAnd(ElementId, StringComparison, IEnumerable<string>)` – combine values with AND for a single parameter.
+- `WherePasses(ParameterFilterSet)` – apply a nested set of parameter rules with OR or AND logic.
+- `Where(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder>)` – build a complex parameter filter using a builder callback.
+
+`StringComparison` adds containment and prefix/suffix checks in addition to the equality and greater/less options defined by `Comparison`.
 
 ### ElementExtensions
 
@@ -85,6 +132,10 @@ The library exposes helpers for common Revit API patterns.
   its type using a flexible `ParameterIdentifier` or name.
 - `GetParameterValue` and `SetParameterValue` – read and write parameter values
   with automatic type conversion.
+
+### BuiltInParameterExtensions
+
+- `ToElementId()` – convert a built-in parameter enum value to its corresponding `ElementId`.
 
 ### TransactionExtensions
 

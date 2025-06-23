@@ -50,6 +50,349 @@ namespace RevitExtensions.Tests
             Assert.Equal(cats, collector.Categories);
             Assert.True(collector.OnlyElementTypes);
         }
+
+        [Fact]
+        public void Where_Equals_FiltersByParameterValue()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(1));
+            var p1 = new Parameter(new ElementId(10)) { StorageType = StorageType.String };
+            p1.Definition.Name = "Foo";
+            p1.Set("bar");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(2));
+            var p2 = new Parameter(new ElementId(11)) { StorageType = StorageType.String };
+            p2.Definition.Name = "Foo";
+            p2.Set("baz");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(10), StringComparison.Equals, "bar");
+
+            Assert.Same(collector, filtered);
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_Contains_FiltersBySubstring()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(3));
+            var p1 = new Parameter(new ElementId(12)) { StorageType = StorageType.String };
+            p1.Definition.Name = "Foo";
+            p1.Set("hello world");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(4));
+            var p2 = new Parameter(new ElementId(13)) { StorageType = StorageType.String };
+            p2.Definition.Name = "Foo";
+            p2.Set("goodbye");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(12), StringComparison.Contains, "world");
+
+            Assert.Same(collector, filtered);
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_FiltersUsingParameterId()
+        {
+            var doc = new Document();
+            doc.ParameterBindings.Add("Foo", new ElementId(20));
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(5));
+            var p1 = new Parameter(new ElementId(20)) { StorageType = StorageType.String };
+            p1.Definition.Name = "Other";
+            p1.Set("bar");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var filtered = collector.Where(new ElementId(20), StringComparison.Equals, "bar");
+
+            Assert.Same(collector, filtered);
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+
+        [Fact]
+        public void Or_ReturnsElementsMatchingAnyRule()
+        {
+            var doc = new Document();
+            doc.ParameterBindings.Add("Foo", new ElementId(40));
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(7));
+            var p1 = new Parameter(new ElementId(40)) { StorageType = StorageType.String };
+            p1.Definition.Name = "Foo";
+            p1.Set("a");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(8));
+            var p2 = new Parameter(new ElementId(40)) { StorageType = StorageType.String };
+            p2.Definition.Name = "Foo";
+            p2.Set("b");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.WhereOr(
+                (new ElementId(40), StringComparison.Equals, "a"),
+                (new ElementId(40), StringComparison.Equals, "b"));
+
+            Assert.Equal(new[] { e1, e2 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Or_List_ReturnsElementsMatchingAnyValue()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(80));
+            var p1 = new Parameter(new ElementId(70)) { StorageType = StorageType.String };
+            p1.Set("a");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(81));
+            var p2 = new Parameter(new ElementId(70)) { StorageType = StorageType.String };
+            p2.Set("b");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.WhereOr(new ElementId(70), StringComparison.Equals, new[] { "a", "b" });
+
+            Assert.Equal(new[] { e1, e2 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void And_ReturnsElementsMatchingAllRules()
+        {
+            var doc = new Document();
+            doc.ParameterBindings.Add("A", new ElementId(50));
+            doc.ParameterBindings.Add("B", new ElementId(51));
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(9));
+            var pa1 = new Parameter(new ElementId(50)) { StorageType = StorageType.String };
+            pa1.Definition.Name = "A";
+            pa1.Set("x");
+            e1.Parameters.Add(pa1);
+            var pb1 = new Parameter(new ElementId(51)) { StorageType = StorageType.String };
+            pb1.Definition.Name = "B";
+            pb1.Set("y");
+            e1.Parameters.Add(pb1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(10));
+            var pa2 = new Parameter(new ElementId(50)) { StorageType = StorageType.String };
+            pa2.Definition.Name = "A";
+            pa2.Set("x");
+            e2.Parameters.Add(pa2);
+            collector.AddElement(e2);
+
+            var filtered = collector.WhereAnd(
+                (new ElementId(50), StringComparison.Equals, "x"),
+                (new ElementId(51), StringComparison.Equals, "y"));
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void And_List_ReturnsElementsMatchingAllValues()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(82));
+            var p1 = new Parameter(new ElementId(71)) { StorageType = StorageType.String };
+            p1.Set("abc");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(83));
+            var p2 = new Parameter(new ElementId(71)) { StorageType = StorageType.String };
+            p2.Set("a");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.WhereAnd(new ElementId(71), StringComparison.Contains, new[] { "a", "b" });
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_IntComparison_FiltersByValue()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(30));
+            var p1 = new Parameter(new ElementId(60)) { StorageType = StorageType.Integer };
+            p1.Set(5);
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(31));
+            var p2 = new Parameter(new ElementId(60)) { StorageType = StorageType.Integer };
+            p2.Set(3);
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(60), Comparison.GreaterOrEqual, 4);
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_DoubleComparison_FiltersByValue()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(32));
+            var p1 = new Parameter(new ElementId(61)) { StorageType = StorageType.Double };
+            p1.Set(10.0);
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(33));
+            var p2 = new Parameter(new ElementId(61)) { StorageType = StorageType.Double };
+            p2.Set(20.0);
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(61), Comparison.Less, 15.0);
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_ElementIdComparison_FiltersByValue()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(34));
+            var p1 = new Parameter(new ElementId(62)) { StorageType = StorageType.ElementId };
+            p1.Set(new ElementId(100));
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(35));
+            var p2 = new Parameter(new ElementId(62)) { StorageType = StorageType.ElementId };
+            p2.Set(new ElementId(200));
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(62), Comparison.NotEquals, new ElementId(100));
+
+            Assert.Equal(new[] { e2 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void WherePasses_ComposesComplexFilters()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(40));
+            var p1a = new Parameter(new ElementId(70)) { StorageType = StorageType.String };
+            p1a.Set("a");
+            e1.Parameters.Add(p1a);
+            var p1b = new Parameter(new ElementId(71)) { StorageType = StorageType.String };
+            p1b.Set("c");
+            e1.Parameters.Add(p1b);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(41));
+            var p2a = new Parameter(new ElementId(70)) { StorageType = StorageType.String };
+            p2a.Set("b");
+            e2.Parameters.Add(p2a);
+            var p2b = new Parameter(new ElementId(71)) { StorageType = StorageType.String };
+            p2b.Set("d");
+            e2.Parameters.Add(p2b);
+            collector.AddElement(e2);
+
+            var set = new ParameterFilterSetBuilder()
+                .AddOr(
+                    (new ElementId(70), StringComparison.Equals, "a"),
+                    (new ElementId(70), StringComparison.Equals, "b"))
+                .AddRule(new ElementId(71), StringComparison.Equals, "c")
+                .Build();
+
+            var filtered = collector.WherePasses(set);
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_BuilderOverload_ComposesFilters()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(42));
+            var p1a = new Parameter(new ElementId(72)) { StorageType = StorageType.String };
+            p1a.Set("a");
+            e1.Parameters.Add(p1a);
+            var p1b = new Parameter(new ElementId(73)) { StorageType = StorageType.String };
+            p1b.Set("c");
+            e1.Parameters.Add(p1b);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(43));
+            var p2a = new Parameter(new ElementId(72)) { StorageType = StorageType.String };
+            p2a.Set("b");
+            e2.Parameters.Add(p2a);
+            var p2b = new Parameter(new ElementId(73)) { StorageType = StorageType.String };
+            p2b.Set("d");
+            e2.Parameters.Add(p2b);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(b => b
+                .AddOr(
+                    (new ElementId(72), StringComparison.Equals, "a"),
+                    (new ElementId(72), StringComparison.Equals, "b"))
+                .AddRule(new ElementId(73), StringComparison.Equals, "c"));
+
+            Assert.Same(collector, filtered);
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_BuiltInParameter_UsesEnum()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            BuiltInParameter bip = (BuiltInParameter)(-100);
+
+            var e1 = new Element(new ElementId(50));
+            var p1 = new Parameter(bip) { StorageType = StorageType.String };
+            p1.Set("foo");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(51));
+            var p2 = new Parameter(bip) { StorageType = StorageType.String };
+            p2.Set("bar");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(bip, StringComparison.Equals, "foo");
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
     }
 }
-
