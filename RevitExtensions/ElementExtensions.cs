@@ -36,6 +36,41 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Gets the element with this id from the given document.
+        /// </summary>
+        /// <param name="id">The element id.</param>
+        /// <param name="document">The owning document.</param>
+        /// <returns>The element or <c>null</c> if not found.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="id"/> or <paramref name="document"/> is null.
+        /// </exception>
+        public static Element? ToElement(this ElementId id, Document document)
+        {
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return document.GetElement(id);
+        }
+
+        /// <summary>
+        /// Gets the element with this id from the given document and casts it to the specified type.
+        /// </summary>
+        /// <typeparam name="T">The expected element type.</typeparam>
+        /// <param name="id">The element id.</param>
+        /// <param name="document">The owning document.</param>
+        /// <returns>The element cast to <typeparamref name="T"/> if found; otherwise <c>null</c>.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="id"/> or <paramref name="document"/> is null.
+        /// </exception>
+        public static T? ToElement<T>(this ElementId id, Document document) where T : Element
+        {
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return document.GetElement(id) as T;
+        }
+
+        /// <summary>
         /// Determines if the element can be edited.
         /// </summary>
         /// <param name="element">The element to check.</param>

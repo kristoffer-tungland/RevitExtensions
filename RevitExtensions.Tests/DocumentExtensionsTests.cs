@@ -76,6 +76,71 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void GetElement_ElementId_ReturnsElement()
+        {
+            var doc = new Document();
+            var id = new ElementId(1);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = doc.GetElement(id);
+
+            Assert.Same(element, result);
+        }
+
+        [Fact]
+        public void GetElement_Int_ReturnsElement()
+        {
+            var doc = new Document();
+            var id = new ElementId(2);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = doc.GetElement(2);
+
+            Assert.Same(element, result);
+        }
+
+        [Fact]
+        public void GetElement_Long_ReturnsElement()
+        {
+            var doc = new Document();
+            var id = new ElementId(3);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = doc.GetElement(3L);
+
+            Assert.Same(element, result);
+        }
+
+        [Fact]
+        public void GetElement_Generic_ReturnsElementOfType()
+        {
+            var doc = new Document();
+            var id = new ElementId(4);
+            var wall = new Wall(id);
+            doc.AddElement(wall);
+
+            var result = doc.GetElement<Wall>(4);
+
+            Assert.Same(wall, result);
+        }
+
+        [Fact]
+        public void GetElement_Generic_WrongType_ReturnsNull()
+        {
+            var doc = new Document();
+            var id = new ElementId(5);
+            var element = new Element(doc, id);
+            doc.AddElement(element);
+
+            var result = doc.GetElement<Wall>(5);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
         public void StartTransaction_StartsAndReturnsTransaction()
         {
             var doc = new Document();

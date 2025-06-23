@@ -101,6 +101,95 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Gets an element by id.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element with the given id, or <c>null</c> if none exists.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> or <paramref name="id"/> is null.</exception>
+        public static Element? GetElement(this Document document, ElementId id)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (id == null) throw new ArgumentNullException(nameof(id));
+
+            return id.ToElement(document);
+        }
+
+        /// <summary>
+        /// Gets an element by integer id.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element with the given id, or <c>null</c> if none exists.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static Element? GetElement(this Document document, int id)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return id.ToElementId().ToElement(document);
+        }
+
+        /// <summary>
+        /// Gets an element by long id.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element with the given id, or <c>null</c> if none exists.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static Element? GetElement(this Document document, long id)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return id.ToElementId().ToElement(document);
+        }
+
+        /// <summary>
+        /// Gets an element of the specified type by id.
+        /// </summary>
+        /// <typeparam name="T">The expected element type.</typeparam>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element cast to <typeparamref name="T"/> if found; otherwise null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> or <paramref name="id"/> is null.</exception>
+        public static T? GetElement<T>(this Document document, ElementId id) where T : Element
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (id == null) throw new ArgumentNullException(nameof(id));
+
+            return id.ToElement<T>(document);
+        }
+
+        /// <summary>
+        /// Gets an element of the specified type by integer id.
+        /// </summary>
+        /// <typeparam name="T">The expected element type.</typeparam>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element cast to <typeparamref name="T"/> if found; otherwise null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static T? GetElement<T>(this Document document, int id) where T : Element
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return id.ToElementId().ToElement<T>(document);
+        }
+
+        /// <summary>
+        /// Gets an element of the specified type by long id.
+        /// </summary>
+        /// <typeparam name="T">The expected element type.</typeparam>
+        /// <param name="document">The document to search.</param>
+        /// <param name="id">The element id.</param>
+        /// <returns>The element cast to <typeparamref name="T"/> if found; otherwise null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static T? GetElement<T>(this Document document, long id) where T : Element
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return id.ToElementId().ToElement<T>(document);
+        }
+
+        /// <summary>
         /// Creates and starts a transaction.
         /// </summary>
         /// <param name="document">The owning document.</param>

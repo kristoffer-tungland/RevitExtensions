@@ -10,6 +10,9 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 
 - `InstancesOf<T>()` / `TypesOf<T>()` – create a `FilteredElementCollector` for element instances or types.
 - Overloads allow filtering by a `BuiltInCategory` or multiple categories.
+- `GetElement()` overloads retrieve an element by id (`ElementId`, `int` or `long`).
+  Generic versions cast the result to the specified element type and may return
+  `null` if the id does not exist.
 - `StartTransaction`, `StartTransactionGroup` and `StartSubTransaction` start the respective transaction object and ensure it began successfully.
 
 ### FilteredElementCollectorExtensions
@@ -37,6 +40,8 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 ### ElementExtensions
 
 - `GetElementIdValue()` – returns the element id as a `long` regardless of Revit version.
+- `ToElement()` – retrieve an element from a document by id. Generic overload
+  casts the result to the specified element type.
 - `CanEdit(out EditStatus)` – determines if the element can be edited in the current workshared document.
 - `GetElementType()` – retrieves the element's type element.
 
@@ -48,6 +53,7 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 ### BuiltInParameterExtensions
 
 - `ToElementId()` – convert a built-in parameter enum value to its corresponding `ElementId`.
+- `int` and `long` also provide `ToElementId()` helpers.
 
 ### TransactionExtensions
 
