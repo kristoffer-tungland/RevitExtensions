@@ -52,21 +52,21 @@ var fooIsBar = document.InstancesOf<Wall>()
 // combine sets of filters
 var complex = document.InstancesOf<Wall>()
     .Where(b => b
-        .AddOr(
+        .OrSet(
             (new ElementId(20), StringComparison.Equals, "A"),
             (new ElementId(20), StringComparison.Equals, "B"))
-        .AddRule(new ElementId(21), StringComparison.Equals, "C"))
+        .Rule(new ElementId(21), StringComparison.Equals, "C"))
     .ToElements();
 
 // multiple levels of nested sets
 var nested = document.InstancesOf<Wall>()
     .Where(b => b
-        .AddOr(or => or
-            .AddRule(new ElementId(30), StringComparison.Equals, "A")
-            .AddAnd(and => and
-                .AddRule(new ElementId(31), StringComparison.Equals, "B")
-                .AddRule(new ElementId(32), StringComparison.Equals, "C")))
-        .AddRule(new ElementId(33), StringComparison.Equals, "D"))
+        .OrSet(or => or
+            .Rule(new ElementId(30), StringComparison.Equals, "A")
+            .AndSet(and => and
+                .Rule(new ElementId(31), StringComparison.Equals, "B")
+                .Rule(new ElementId(32), StringComparison.Equals, "C")))
+        .Rule(new ElementId(33), StringComparison.Equals, "D"))
     .ToElements();
 ```
 

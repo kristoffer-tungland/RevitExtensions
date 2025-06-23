@@ -40,7 +40,7 @@ namespace RevitExtensions
         /// <param name="rule">The rule to add.</param>
         /// <returns>This set instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="rule"/> is null.</exception>
-        public ParameterFilterSet AddRule(FilterRule rule)
+        public ParameterFilterSet Rule(FilterRule rule)
         {
             if (rule == null) throw new ArgumentNullException(nameof(rule));
             Rules.Add(rule);
