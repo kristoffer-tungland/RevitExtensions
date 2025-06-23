@@ -19,6 +19,26 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void Instances_ReturnsCollectorWithDocument()
+        {
+            var doc = new Document();
+            var collector = doc.Instances();
+
+            Assert.Same(doc, collector.Document);
+            Assert.True(collector.ExcludesElementTypes);
+        }
+
+        [Fact]
+        public void Types_ReturnsCollectorWithDocument()
+        {
+            var doc = new Document();
+            var collector = doc.Types();
+
+            Assert.Same(doc, collector.Document);
+            Assert.True(collector.OnlyElementTypes);
+        }
+
+        [Fact]
         public void TypesOf_Type_ReturnsCollectorWithDocumentAndType()
         {
             var doc = new Document();

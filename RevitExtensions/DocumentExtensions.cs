@@ -9,6 +9,34 @@ namespace RevitExtensions
     public static class DocumentExtensions
     {
         /// <summary>
+        /// Creates a collector for all element instances in the document.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <returns>A collector that excludes element types.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static FilteredElementCollector Instances(this Document document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return new FilteredElementCollector(document)
+                .WhereElementIsNotElementType();
+        }
+
+        /// <summary>
+        /// Creates a collector for all element types in the document.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <returns>A collector that only includes element types.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="document"/> is null.</exception>
+        public static FilteredElementCollector Types(this Document document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            return new FilteredElementCollector(document)
+                .WhereElementIsElementType();
+        }
+
+        /// <summary>
         /// Creates a collector for elements of the specified type.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>

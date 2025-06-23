@@ -45,6 +45,8 @@ namespace RevitExtensions
 
         public static System.Collections.Generic.IEnumerable<FilterRule> CreateRules(ElementId parameterId, StringComparison comparison, string value)
         {
+            if (comparison == StringComparison.Wildcard)
+                return CreateWildcardRules(parameterId, value);
             if (comparison == StringComparison.Equals && value.IndexOf('*') >= 0)
                 return CreateWildcardRules(parameterId, value);
 

@@ -9,6 +9,7 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 ### DocumentExtensions
 
 - `InstancesOf<T>()` / `TypesOf<T>()` – create a `FilteredElementCollector` for element instances or types.
+- `Instances()` / `Types()` – create a collector for all element instances or types in the document.
 - Overloads allow filtering by a `BuiltInCategory` or multiple categories.
 - `GetElement()` overloads retrieve an element by id (`ElementId`, `int` or `long`).
   Generic versions cast the result to the specified element type and may return
@@ -18,6 +19,7 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 ### FilteredElementCollectorExtensions
 
 - `InstancesOf<T>()` / `TypesOf<T>()` – filter an existing collector by type.
+- `Instances()` / `Types()` – limit an existing collector to element instances or types.
 - Overloads filter by a category or multiple categories.
 - `ForEach(Action<Element>)` – enumerates the collector and disposes each element after the action executes.
  - `Where(ElementId, StringComparison, string)` – filter by a string parameter value.
@@ -35,7 +37,7 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 - `WherePasses(ParameterFilterSet)` – apply a nested set of parameter rules with OR or AND logic.
 - `Where(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder>)` – build a complex parameter filter using a builder callback.
 
-`StringComparison` adds containment and prefix/suffix checks in addition to the equality and greater/less options defined by `Comparison`.
+`StringComparison` adds wildcard, containment and prefix/suffix checks in addition to the equality and greater/less options defined by `Comparison`.
 
 ### ElementExtensions
 
@@ -77,18 +79,19 @@ tx.CommitAndEnsure();
 // get all wall instances in the document
 var walls = document.InstancesOf<Wall>().ToElements();
 
+// get all element types in the document
+var allTypes = document.Types().ToElements();
+
 // retrieve an element id as a long
 long id = element.GetElementIdValue();
 
 // filter walls by a parameter value
-var exteriorWalls = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
+var exteriorWalls = document.InstancesOf<Wall>()
     .Where(new ElementId(10), StringComparison.Equals, "Exterior")
     .ToElements();
 
 // combine multiple rules
-var fireConcrete = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
+var fireConcrete = document.InstancesOf<Wall>()
     .WhereAnd(
         (new ElementId(20), StringComparison.Contains, "Fire"),
         (new ElementId(21), StringComparison.Equals, "Concrete"))
@@ -96,25 +99,21 @@ var fireConcrete = new FilteredElementCollector(document)
 
 // filter by multiple values for one parameter
 var codes = new[] { "A", "B" };
-var multi = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
+var multi = document.InstancesOf<Wall>()
     .WhereOr(new ElementId(20), StringComparison.Equals, codes)
     .ToElements();
 
 // wildcard string comparison
-var fooBar = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
-    .Where(new ElementId(25), StringComparison.Equals, "foo*bar")
+var fooBar = document.InstancesOf<Wall>()
+    .Where(new ElementId(25), StringComparison.Wildcard, "foo*bar")
     .ToElements();
 
-var fooIsBar = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
-    .Where(new ElementId(25), StringComparison.Equals, "foo*is*bar")
+var fooIsBar = document.InstancesOf<Wall>()
+    .Where(new ElementId(25), StringComparison.Wildcard, "foo*is*bar")
     .ToElements();
 
 // combine sets of filters
-var complex = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
+var complex = document.InstancesOf<Wall>()
     .Where(b => b
         .AddOr(
             (new ElementId(20), StringComparison.Equals, "A"),
@@ -123,8 +122,7 @@ var complex = new FilteredElementCollector(document)
     .ToElements();
 
 // multiple levels of nested sets
-var nested = new FilteredElementCollector(document)
-    .InstancesOf<Wall>()
+var nested = document.InstancesOf<Wall>()
     .Where(b => b
         .AddOr(or => or
             .AddRule(new ElementId(30), StringComparison.Equals, "A")
