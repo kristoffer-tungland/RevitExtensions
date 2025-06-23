@@ -40,6 +40,17 @@ var multi = new FilteredElementCollector(document)
     .WhereOr(new ElementId(20), StringComparison.Equals, codes)
     .ToElements();
 
+// wildcard string comparison
+var fooBar = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .Where(new ElementId(25), StringComparison.Equals, "foo*bar")
+    .ToElements();
+
+var fooIsBar = new FilteredElementCollector(document)
+    .InstancesOf<Wall>()
+    .Where(new ElementId(25), StringComparison.Equals, "foo*is*bar")
+    .ToElements();
+
 // combine sets of filters
 var complex = new FilteredElementCollector(document)
     .InstancesOf<Wall>()

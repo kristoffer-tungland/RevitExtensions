@@ -442,5 +442,51 @@ namespace RevitExtensions.Tests
 
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
         }
+
+        [Fact]
+        public void Where_Wildcard_BeginsAndEndsWith()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(70));
+            var p1 = new Parameter(new ElementId(90)) { StorageType = StorageType.String };
+            p1.Set("foo123bar");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(71));
+            var p2 = new Parameter(new ElementId(90)) { StorageType = StorageType.String };
+            p2.Set("foo999baz");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(90), StringComparison.Equals, "foo*bar");
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_Wildcard_MultipleSegments()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var e1 = new Element(new ElementId(72));
+            var p1 = new Parameter(new ElementId(91)) { StorageType = StorageType.String };
+            p1.Set("foo-this-bar");
+            e1.Parameters.Add(p1);
+            collector.AddElement(e1);
+
+            var e2 = new Element(new ElementId(73));
+            var p2 = new Parameter(new ElementId(91)) { StorageType = StorageType.String };
+            p2.Set("foo-nope-bar");
+            e2.Parameters.Add(p2);
+            collector.AddElement(e2);
+
+            var filtered = collector.Where(new ElementId(91), StringComparison.Equals, "foo*is*bar");
+
+            Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
     }
 }

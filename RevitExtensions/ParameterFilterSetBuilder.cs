@@ -28,9 +28,10 @@ namespace RevitExtensions
         {
             if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
             if (value == null) throw new ArgumentNullException(nameof(value));
-            var rule = ParameterFilterRuleBuilder.CreateRule(parameterId, comparison, value);
-            if (rule != null)
+            foreach (var rule in ParameterFilterRuleBuilder.CreateRules(parameterId, comparison, value))
+            {
                 _set.AddRule(rule);
+            }
             return this;
         }
 

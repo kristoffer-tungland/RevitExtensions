@@ -43,6 +43,43 @@ namespace RevitExtensions
 #endif
         }
 
+        public static System.Collections.Generic.IEnumerable<FilterRule> CreateRules(ElementId parameterId, StringComparison comparison, string value)
+        {
+            if (comparison == StringComparison.Equals && value.IndexOf('*') >= 0)
+                return CreateWildcardRules(parameterId, value);
+
+            var rule = CreateRule(parameterId, comparison, value);
+            return rule == null
+                ? System.Array.Empty<FilterRule>()
+                : new[] { rule };
+        }
+
+        private static System.Collections.Generic.IEnumerable<FilterRule> CreateWildcardRules(ElementId parameterId, string value)
+        {
+            var parts = value.Split('*');
+            var rules = new System.Collections.Generic.List<FilterRule>();
+
+#if REVIT2022_OR_LESS
+            if (parts.Length > 0 && parts[0].Length > 0)
+                rules.Add(ParameterFilterRuleFactory.CreateBeginsWithRule(parameterId, parts[0], false));
+            for (int i = 1; i < parts.Length - 1; i++)
+                if (parts[i].Length > 0)
+                    rules.Add(ParameterFilterRuleFactory.CreateContainsRule(parameterId, parts[i], false));
+            if (parts.Length > 1 && parts[parts.Length - 1].Length > 0)
+                rules.Add(ParameterFilterRuleFactory.CreateEndsWithRule(parameterId, parts[parts.Length - 1], false));
+#else
+            if (parts.Length > 0 && parts[0].Length > 0)
+                rules.Add(ParameterFilterRuleFactory.CreateBeginsWithRule(parameterId, parts[0]));
+            for (int i = 1; i < parts.Length - 1; i++)
+                if (parts[i].Length > 0)
+                    rules.Add(ParameterFilterRuleFactory.CreateContainsRule(parameterId, parts[i]));
+            if (parts.Length > 1 && parts[parts.Length - 1].Length > 0)
+                rules.Add(ParameterFilterRuleFactory.CreateEndsWithRule(parameterId, parts[parts.Length - 1]));
+#endif
+
+            return rules;
+        }
+
         public static FilterRule? CreateRule(ElementId parameterId, Comparison comparison, int value)
         {
 #if REVIT2022_OR_LESS
@@ -118,8 +155,11 @@ namespace RevitExtensions
 
         public static ElementParameterFilter? CreateFilter(ElementId parameterId, StringComparison comparison, string value)
         {
-            var rule = CreateRule(parameterId, comparison, value);
-            return rule == null ? null : new ElementParameterFilter(rule);
+            var rules = CreateRules(parameterId, comparison, value);
+            var list = new System.Collections.Generic.List<FilterRule>(rules);
+            if (list.Count == 0)
+                return null;
+            return new ElementParameterFilter(list);
         }
 
         public static ElementParameterFilter? CreateFilter(ElementId parameterId, Comparison comparison, int value)
