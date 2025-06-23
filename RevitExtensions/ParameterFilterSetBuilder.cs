@@ -24,13 +24,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a rule to the builder.
         /// </summary>
-        public ParameterFilterSetBuilder AddRule(ElementId parameterId, StringComparison comparison, string value)
+        public ParameterFilterSetBuilder Rule(ElementId parameterId, StringComparison comparison, string value)
         {
             if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
             if (value == null) throw new ArgumentNullException(nameof(value));
             foreach (var rule in ParameterFilterRuleBuilder.CreateRules(parameterId, comparison, value))
             {
-                _set.AddRule(rule);
+                _set.Rule(rule);
             }
             return this;
         }
@@ -38,50 +38,50 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a rule to the builder.
         /// </summary>
-        public ParameterFilterSetBuilder AddRule(ElementId parameterId, Comparison comparison, int value)
+        public ParameterFilterSetBuilder Rule(ElementId parameterId, Comparison comparison, int value)
         {
             if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
             var rule = ParameterFilterRuleBuilder.CreateRule(parameterId, comparison, value);
             if (rule != null)
-                _set.AddRule(rule);
+                _set.Rule(rule);
             return this;
         }
 
         /// <summary>
         /// Adds a rule to the builder.
         /// </summary>
-        public ParameterFilterSetBuilder AddRule(ElementId parameterId, Comparison comparison, double value)
+        public ParameterFilterSetBuilder Rule(ElementId parameterId, Comparison comparison, double value)
         {
             if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
             var rule = ParameterFilterRuleBuilder.CreateRule(parameterId, comparison, value);
             if (rule != null)
-                _set.AddRule(rule);
+                _set.Rule(rule);
             return this;
         }
 
         /// <summary>
         /// Adds a rule to the builder.
         /// </summary>
-        public ParameterFilterSetBuilder AddRule(ElementId parameterId, Comparison comparison, ElementId value)
+        public ParameterFilterSetBuilder Rule(ElementId parameterId, Comparison comparison, ElementId value)
         {
             if (parameterId == null) throw new ArgumentNullException(nameof(parameterId));
             if (value == null) throw new ArgumentNullException(nameof(value));
             var rule = ParameterFilterRuleBuilder.CreateRule(parameterId, comparison, value);
             if (rule != null)
-                _set.AddRule(rule);
+                _set.Rule(rule);
             return this;
         }
 
         /// <summary>
         /// Adds a nested OR set using the provided conditions.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
+        public ParameterFilterSetBuilder OrSet(params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
         {
             if (conditions == null) throw new ArgumentNullException(nameof(conditions));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
             foreach (var (parameterId, comparison, value) in conditions)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -89,7 +89,7 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested OR set configured via a callback.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
+        public ParameterFilterSetBuilder OrSet(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
         {
             if (configure == null) throw new ArgumentNullException(nameof(configure));
 
@@ -101,13 +101,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested OR set for a single parameter with multiple values.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(ElementId parameterId, StringComparison comparison, IEnumerable<string> values)
+        public ParameterFilterSetBuilder OrSet(ElementId parameterId, StringComparison comparison, IEnumerable<string> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -115,13 +115,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested OR set for integer values.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(ElementId parameterId, Comparison comparison, IEnumerable<int> values)
+        public ParameterFilterSetBuilder OrSet(ElementId parameterId, Comparison comparison, IEnumerable<int> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -129,13 +129,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested OR set for double values.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(ElementId parameterId, Comparison comparison, IEnumerable<double> values)
+        public ParameterFilterSetBuilder OrSet(ElementId parameterId, Comparison comparison, IEnumerable<double> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -143,13 +143,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested OR set for element id values.
         /// </summary>
-        public ParameterFilterSetBuilder AddOr(ElementId parameterId, Comparison comparison, IEnumerable<ElementId> values)
+        public ParameterFilterSetBuilder OrSet(ElementId parameterId, Comparison comparison, IEnumerable<ElementId> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.Or);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -157,13 +157,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set using the provided conditions.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
+        public ParameterFilterSetBuilder AndSet(params (ElementId parameterId, StringComparison comparison, string value)[] conditions)
         {
             if (conditions == null) throw new ArgumentNullException(nameof(conditions));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
             foreach (var (parameterId, comparison, value) in conditions)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -171,7 +171,7 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set configured via a callback.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
+        public ParameterFilterSetBuilder AndSet(Func<ParameterFilterSetBuilder, ParameterFilterSetBuilder> configure)
         {
             if (configure == null) throw new ArgumentNullException(nameof(configure));
 
@@ -183,13 +183,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set for a single parameter with multiple values.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(ElementId parameterId, StringComparison comparison, IEnumerable<string> values)
+        public ParameterFilterSetBuilder AndSet(ElementId parameterId, StringComparison comparison, IEnumerable<string> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -197,13 +197,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set for integer values.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(ElementId parameterId, Comparison comparison, IEnumerable<int> values)
+        public ParameterFilterSetBuilder AndSet(ElementId parameterId, Comparison comparison, IEnumerable<int> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -211,13 +211,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set for double values.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(ElementId parameterId, Comparison comparison, IEnumerable<double> values)
+        public ParameterFilterSetBuilder AndSet(ElementId parameterId, Comparison comparison, IEnumerable<double> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }
@@ -225,13 +225,13 @@ namespace RevitExtensions
         /// <summary>
         /// Adds a nested AND set for element id values.
         /// </summary>
-        public ParameterFilterSetBuilder AddAnd(ElementId parameterId, Comparison comparison, IEnumerable<ElementId> values)
+        public ParameterFilterSetBuilder AndSet(ElementId parameterId, Comparison comparison, IEnumerable<ElementId> values)
         {
             if (values == null) throw new ArgumentNullException(nameof(values));
             var nested = new ParameterFilterSetBuilder(ParameterFilterSetOperator.And);
             foreach (var value in values)
             {
-                nested.AddRule(parameterId, comparison, value);
+                nested.Rule(parameterId, comparison, value);
             }
             return AddSet(nested);
         }

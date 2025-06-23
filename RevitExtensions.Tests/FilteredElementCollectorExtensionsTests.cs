@@ -345,10 +345,10 @@ namespace RevitExtensions.Tests
             collector.AddElement(e2);
 
             var set = new ParameterFilterSetBuilder()
-                .AddOr(
+                .OrSet(
                     (new ElementId(70), StringComparison.Equals, "a"),
                     (new ElementId(70), StringComparison.Equals, "b"))
-                .AddRule(new ElementId(71), StringComparison.Equals, "c")
+                .Rule(new ElementId(71), StringComparison.Equals, "c")
                 .Build();
 
             var filtered = collector.WherePasses(set);
@@ -381,10 +381,10 @@ namespace RevitExtensions.Tests
             collector.AddElement(e2);
 
             var filtered = collector.Where(b => b
-                .AddOr(
+                .OrSet(
                     (new ElementId(72), StringComparison.Equals, "a"),
                     (new ElementId(72), StringComparison.Equals, "b"))
-                .AddRule(new ElementId(73), StringComparison.Equals, "c"));
+                .Rule(new ElementId(73), StringComparison.Equals, "c"));
 
             Assert.Same(collector, filtered);
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
@@ -427,12 +427,12 @@ namespace RevitExtensions.Tests
             collector.AddElement(e2);
 
             var filtered = collector.Where(b => b
-                .AddOr(or => or
-                    .AddRule(new ElementId(80), StringComparison.Equals, "A")
-                    .AddAnd(and => and
-                        .AddRule(new ElementId(81), StringComparison.Equals, "B")
-                        .AddRule(new ElementId(82), StringComparison.Equals, "C")))
-                .AddRule(new ElementId(83), StringComparison.Equals, "D"));
+                .OrSet(or => or
+                    .Rule(new ElementId(80), StringComparison.Equals, "A")
+                    .AndSet(and => and
+                        .Rule(new ElementId(81), StringComparison.Equals, "B")
+                        .Rule(new ElementId(82), StringComparison.Equals, "C")))
+                .Rule(new ElementId(83), StringComparison.Equals, "D"));
 
             Assert.Same(collector, filtered);
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
