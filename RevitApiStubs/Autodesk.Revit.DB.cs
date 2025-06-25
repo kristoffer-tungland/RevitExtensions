@@ -525,16 +525,18 @@ namespace Autodesk.Revit.DB
     {
         public BindingMap() : base(System.StringComparer.OrdinalIgnoreCase) { }
 
-        private readonly System.Collections.Generic.Dictionary<Definition, ElementBinding> _bindings = new System.Collections.Generic.Dictionary<Definition, ElementBinding>();
+        private readonly System.Collections.Generic.Dictionary<Definition, ElementBinding> _bindings =
+            new System.Collections.Generic.Dictionary<Definition, ElementBinding>();
 
-        public ElementBinding this[Definition def]
+        public ElementBinding get_Item(Definition def)
         {
-            get
-            {
-                _bindings.TryGetValue(def, out var binding);
-                return binding;
-            }
-            set => _bindings[def] = value;
+            _bindings.TryGetValue(def, out var binding);
+            return binding;
+        }
+
+        public void set_Item(Definition def, ElementBinding binding)
+        {
+            _bindings[def] = binding;
         }
     }
 

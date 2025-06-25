@@ -22,13 +22,13 @@ namespace RevitExtensions
 
         public static bool GetIsInstanceSafe(this ParameterElement element, Document doc)
         {
-            var binding = doc.ParameterBindings[element.GetDefinitionSafe()] as ElementBinding;
+            var binding = doc.ParameterBindings.get_Item(element.GetDefinitionSafe()) as ElementBinding;
             return binding is InstanceBinding;
         }
 
         public static IEnumerable<BuiltInCategory> GetCategoriesSafe(this ParameterElement element, Document doc)
         {
-            var binding = doc.ParameterBindings[element.GetDefinitionSafe()] as ElementBinding;
+            var binding = doc.ParameterBindings.get_Item(element.GetDefinitionSafe()) as ElementBinding;
             if (binding != null)
             {
                 foreach (Category c in binding.Categories)
