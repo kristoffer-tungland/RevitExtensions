@@ -1,5 +1,6 @@
 using System;
 using Autodesk.Revit.DB;
+using System.Collections.Generic;
 
 namespace RevitExtensions
 {
@@ -290,6 +291,72 @@ namespace RevitExtensions
 
             return sub;
         }
+
+        /// <summary>
+        /// Gets the available parameters for all categories in the document. This includes
+        /// built-in, project, and shared parameters. Only built-in parameters are cached.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <returns>A dictionary of parameter metadata keyed by identifier.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+
+            foreach (var kvp in BuiltInParameterCollector.GetParameters(document))
+                result[kvp.Key] = kvp.Value;
+
+            foreach (var kvp in ProjectParameterCollector.GetParameters(document))
+                result[kvp.Key] = kvp.Value;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the available built-in parameters for the specified category.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <param name="category">The built-in category.</param>
+        /// <returns>A dictionary of parameter information.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document, BuiltInCategory category)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            var all = document.GetAvailableParameters();
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+            foreach (var kvp in all)
+            {
+                if (kvp.Value.Categories.Contains(category))
+                    result[kvp.Key] = kvp.Value;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the available built-in parameters for the specified categories.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <param name="categories">The built-in categories.</param>
+        /// <returns>A dictionary of parameter information.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document, System.Collections.Generic.IEnumerable<BuiltInCategory> categories)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (categories == null) throw new ArgumentNullException(nameof(categories));
+
+            var set = new System.Collections.Generic.HashSet<BuiltInCategory>(categories);
+            var all = document.GetAvailableParameters();
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+            foreach (var kvp in all)
+            {
+                if (kvp.Value.Categories.Overlaps(set))
+                    result[kvp.Key] = kvp.Value;
+            }
+            return result;
+        }
+
+
     }
 }
 

@@ -130,6 +130,12 @@ namespace Autodesk.Revit.DB
     {
         public bool IsWorkshared { get; set; }
         public string CurrentUser { get; set; }
+        public bool IsModifiable { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application associated with the document.
+        /// </summary>
+        public Autodesk.Revit.ApplicationServices.Application Application { get; set; } = new Autodesk.Revit.ApplicationServices.Application();
 
         private readonly System.Collections.Generic.Dictionary<ElementId, string> _owners = new System.Collections.Generic.Dictionary<ElementId, string>();
         private readonly System.Collections.Generic.Dictionary<long, Element> _elements = new System.Collections.Generic.Dictionary<long, Element>();
@@ -138,6 +144,8 @@ namespace Autodesk.Revit.DB
         /// Gets the parameter bindings in the document keyed by parameter name.
         /// </summary>
         public BindingMap ParameterBindings { get; } = new BindingMap();
+
+        public Settings Settings { get; } = new Settings();
 
         public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
 
@@ -173,6 +181,11 @@ namespace Autodesk.Revit.DB
                 return element;
             }
             return new Element(this, id);
+        }
+
+        internal System.Collections.Generic.IEnumerable<Element> GetElements()
+        {
+            return _elements.Values;
         }
     }
 
@@ -217,6 +230,10 @@ namespace Autodesk.Revit.DB
         public FilteredElementCollector(Document document)
         {
             Document = document;
+            if (document != null)
+            {
+                _elements.AddRange(document.GetElements());
+            }
         }
 
         public void AddElement(Element element) => _elements.Add(element);
@@ -228,6 +245,7 @@ namespace Autodesk.Revit.DB
         public FilteredElementCollector OfClass(Type type)
         {
             FilterType = type;
+            _elements.RemoveAll(e => e != null && !type.IsAssignableFrom(e.GetType()));
             return this;
         }
 
@@ -280,6 +298,43 @@ namespace Autodesk.Revit.DB
         /// Generic model elements.
         /// </summary>
         GenericModel
+    }
+
+    public enum CategoryType
+    {
+        Model,
+        Annotation,
+        Tags,
+        Internal,
+        AnalyticalModel,
+    }
+
+    public class Category
+    {
+        public ElementId Id { get; }
+        public BuiltInCategory BuiltInCategory { get; }
+        public string Name { get; set; }
+        public CategoryType CategoryType { get; set; }
+        public bool IsVisibleInUI { get; set; } = true;
+
+        public Category(BuiltInCategory id)
+        {
+            BuiltInCategory = id;
+            Id = new ElementId((int)id);
+            Name = id.ToString();
+            CategoryType = CategoryType.Model;
+        }
+    }
+
+    public class Categories : System.Collections.Generic.List<Category>
+    {
+        public Category get_Item(BuiltInCategory id) =>
+            this.Find(c => c.BuiltInCategory == id);
+    }
+
+    public class Settings
+    {
+        public Categories Categories { get; } = new Categories();
     }
 
     /// <summary>
@@ -441,11 +496,63 @@ namespace Autodesk.Revit.DB
     }
 
     /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.ParameterElement.
+    /// </summary>
+    public class ParameterElement : Element
+    {
+        public ParameterElement(ElementId id) : base(id) { }
+
+        public Definition Definition { get; set; } = new Definition();
+
+        public Definition GetDefinition() => Definition;
+
+        public bool IsInstance { get; set; }
+
+        public System.Collections.Generic.HashSet<BuiltInCategory> Categories { get; } = new System.Collections.Generic.HashSet<BuiltInCategory>();
+    }
+
+    public class SharedParameterElement : ParameterElement
+    {
+        public SharedParameterElement(ElementId id) : base(id) { }
+
+        public System.Guid? GuidValue { get; set; }
+    }
+
+    /// <summary>
     /// Simple map of parameter names to ids used to simulate Document.ParameterBindings.
     /// </summary>
     public class BindingMap : System.Collections.Generic.Dictionary<string, ElementId>
     {
         public BindingMap() : base(System.StringComparer.OrdinalIgnoreCase) { }
+
+        private readonly System.Collections.Generic.Dictionary<Definition, ElementBinding> _bindings = new System.Collections.Generic.Dictionary<Definition, ElementBinding>();
+
+        public ElementBinding this[Definition def]
+        {
+            get
+            {
+                _bindings.TryGetValue(def, out var binding);
+                return binding;
+            }
+            set => _bindings[def] = value;
+        }
+    }
+
+    public class CategorySet : System.Collections.Generic.HashSet<Category>
+    {
+    }
+
+    public abstract class ElementBinding
+    {
+        public CategorySet Categories { get; } = new CategorySet();
+    }
+
+    public class InstanceBinding : ElementBinding
+    {
+    }
+
+    public class TypeBinding : ElementBinding
+    {
     }
 
     /// <summary>
@@ -975,6 +1082,15 @@ namespace Autodesk.Revit.DB
             return TransactionStatus.Committed;
         }
 
+        public TransactionStatus RollBack()
+        {
+            if (!IsStarted)
+                return TransactionStatus.Error;
+
+            IsStarted = false;
+            return TransactionStatus.RolledBack;
+        }
+
         public void Dispose() => IsDisposed = true;
     }
 
@@ -1028,7 +1144,7 @@ namespace Autodesk.Revit.DB
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.SubTransaction.
     /// </summary>
-    public class SubTransaction : IDisposable
+public class SubTransaction : IDisposable
     {
         public Document Document { get; }
 
@@ -1055,7 +1171,38 @@ namespace Autodesk.Revit.DB
             return TransactionStatus.Committed;
         }
 
+        public TransactionStatus RollBack()
+        {
+            if (!IsStarted)
+                return TransactionStatus.Error;
+
+            IsStarted = false;
+            return TransactionStatus.RolledBack;
+        }
+
         public void Dispose() => IsDisposed = true;
     }
 
+}
+
+namespace Autodesk.Revit.ApplicationServices
+{
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.ApplicationServices.ControlledApplication.
+    /// </summary>
+    public class ControlledApplication
+    {
+        /// <summary>
+        /// Gets or sets the primary version number of the application.
+        /// </summary>
+        public string VersionNumber { get; set; } = "0";
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.ApplicationServices.Application.
+    /// In Revit, this derives from <see cref="ControlledApplication"/>.
+    /// </summary>
+    public class Application : ControlledApplication
+    {
+    }
 }

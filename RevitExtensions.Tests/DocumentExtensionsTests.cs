@@ -257,5 +257,31 @@ namespace RevitExtensions.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => sub.CommitAndEnsure());
             Assert.Equal("Failed to commit subtransaction.", ex.Message);
         }
+
+        [Fact]
+        public void GetAvailableParameters_ReturnsBuiltInAndProject()
+        {
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var element = new Element(doc, new ElementId(1));
+            element.Parameters.Add(new Parameter((BuiltInParameter)(-1)) { Definition = { Name = "Bip" } });
+            doc.AddElement(element);
+
+            var pe = new ParameterElement(new ElementId(100))
+            {
+                Definition = new Definition { Name = "Proj" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            var parameters = doc.GetAvailableParameters();
+
+            Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1");
+            Assert.Contains(parameters.Keys, k => k.Name == "Proj");
+        }
     }
 }
