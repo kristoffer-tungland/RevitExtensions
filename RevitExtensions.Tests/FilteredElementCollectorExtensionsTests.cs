@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
+using RevitExtensions.Collectors;
 using RevitExtensions;
 using Xunit;
 
@@ -507,6 +508,46 @@ namespace RevitExtensions.Tests
             var filtered = collector.Where(new ElementId(91), StringComparison.Wildcard, "foo*is*bar");
 
             Assert.Equal(new[] { e1 }, new List<Element>(filtered));
+        }
+
+        [Fact]
+        public void Where_Name_FiltersUsingAllParameterIds()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var collector = new FilteredElementCollector(doc);
+
+            var element = new Element(doc, new ElementId(74));
+            var p1 = new Parameter((BuiltInParameter)(-3)) { StorageType = StorageType.String };
+            p1.Definition.Name = "Bar";
+            p1.Set("foo");
+            element.Parameters.Add(p1);
+
+            var p2 = new Parameter(new ElementId(102)) { StorageType = StorageType.String };
+            p2.Definition.Name = "Bar";
+            p2.Set("foo");
+            element.Parameters.Add(p2);
+            collector.AddElement(element);
+
+            var pe = new ParameterElement(new ElementId(102))
+            {
+                Definition = new Definition { Name = "Bar" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            doc.AddElement(element);
+
+            var filtered = collector.Where(doc, "Bar", StringComparison.Equals, "foo");
+
+            Assert.Equal(new[] { element }, new List<Element>(filtered));
         }
     }
 }

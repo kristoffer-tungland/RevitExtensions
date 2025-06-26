@@ -81,17 +81,11 @@ namespace RevitExtensions.Models
         {
             if (this.Guid.HasValue)
             {
-                if (string.IsNullOrEmpty(this.Name))
-                    return this.Guid.Value.ToString();
-
                 return $"{this.Guid.Value};{this.Name}";
             }
 
             if (this.BuiltInParameter.HasValue)
             {
-                if (string.IsNullOrEmpty(this.Name))
-                    return ((int)this.BuiltInParameter.Value).ToString();
-
                 return $"{(int)this.BuiltInParameter.Value};{this.Name}";
             }
 
