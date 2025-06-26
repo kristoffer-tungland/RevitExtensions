@@ -78,7 +78,7 @@ namespace RevitExtensions.Tests
 
             Assert.Equal((BuiltInParameter)(-10), id.BuiltInParameter);
             Assert.Equal(parameter.Definition.Name, id.Name);
-            Assert.Equal("-10", parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal("-10;" + parameter.Definition.Name, parameter.ToIdentifier().ToStableRepresentation());
         }
 
         [Fact]

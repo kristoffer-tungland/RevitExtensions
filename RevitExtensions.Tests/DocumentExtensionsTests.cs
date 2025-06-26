@@ -285,7 +285,7 @@ namespace RevitExtensions.Tests
 
             var parameters = doc.GetAvailableParameters();
 
-            Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1");
+            Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1;Bip");
             Assert.Contains(parameters.Keys, k => k.Name == "Proj");
         }
 

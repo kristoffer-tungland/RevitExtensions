@@ -43,13 +43,14 @@ namespace RevitExtensions.Models
 
             var identifier = new ParameterIdentifier();
 
-            if (System.Guid.TryParse(value, out var guid))
+            var parts = value.Split(new[] { ';' }, 2);
+            var token = parts[0];
+
+            if (System.Guid.TryParse(token, out var guid))
             {
                 identifier.Guid = guid;
-                return identifier;
             }
-
-            if (int.TryParse(value, out var intValue))
+            else if (int.TryParse(token, out var intValue))
             {
                 if (intValue < 0)
                 {
@@ -59,11 +60,15 @@ namespace RevitExtensions.Models
                 {
                     identifier.Id = intValue;
                 }
-
-                return identifier;
+            }
+            else
+            {
+                identifier.Name = token;
             }
 
-            identifier.Name = value;
+            if (parts.Length > 1)
+                identifier.Name = parts[1];
+
             return identifier;
         }
 
@@ -75,10 +80,20 @@ namespace RevitExtensions.Models
         public string ToStableRepresentation()
         {
             if (this.Guid.HasValue)
-                return this.Guid.Value.ToString();
+            {
+                if (string.IsNullOrEmpty(this.Name))
+                    return this.Guid.Value.ToString();
+
+                return $"{this.Guid.Value};{this.Name}";
+            }
 
             if (this.BuiltInParameter.HasValue)
-                return ((int)this.BuiltInParameter.Value).ToString();
+            {
+                if (string.IsNullOrEmpty(this.Name))
+                    return ((int)this.BuiltInParameter.Value).ToString();
+
+                return $"{(int)this.BuiltInParameter.Value};{this.Name}";
+            }
 
             if (!string.IsNullOrEmpty(this.Name))
                 return this.Name;
