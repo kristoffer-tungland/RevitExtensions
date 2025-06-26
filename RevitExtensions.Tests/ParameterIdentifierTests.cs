@@ -18,7 +18,7 @@ namespace RevitExtensions.Tests
             Assert.Null(id.BuiltInParameter);
             Assert.Null(id.Name);
             Assert.Null(id.Id);
-            Assert.Equal(guid, id.ToStableRepresentation());
+            Assert.Equal(guid + ";", id.ToStableRepresentation());
         }
 
         [Fact]
@@ -30,7 +30,7 @@ namespace RevitExtensions.Tests
             Assert.Null(id.Guid);
             Assert.Null(id.Name);
             Assert.Null(id.Id);
-            Assert.Equal("-42", id.ToStableRepresentation());
+            Assert.Equal("-42;", id.ToStableRepresentation());
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace RevitExtensions.Tests
             var id = parameter.ToIdentifier();
 
             Assert.Equal(guid, id.Guid);
-            Assert.Equal(guid.ToString(), parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal(guid.ToString() + ";", parameter.ToIdentifier().ToStableRepresentation());
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace RevitExtensions.Tests
 
             Assert.Equal((BuiltInParameter)(-10), id.BuiltInParameter);
             Assert.Equal(parameter.Definition.Name, id.Name);
-            Assert.Equal("-10", parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal("-10;" + parameter.Definition.Name, parameter.ToIdentifier().ToStableRepresentation());
         }
 
         [Fact]

@@ -285,7 +285,7 @@ namespace RevitExtensions.Tests
 
             var parameters = doc.GetAvailableParameters();
 
-            Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1");
+            Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1;Bip");
             Assert.Contains(parameters.Keys, k => k.Name == "Proj");
         }
 
@@ -337,6 +337,60 @@ namespace RevitExtensions.Tests
 
             Assert.NotNull(id);
             Assert.Equal((BuiltInParameter)(-2), id.BuiltInParameter);
+        }
+
+        [Fact]
+        public void LookupParameterId_GuidNotFound_FallsBackToName()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var pe = new ParameterElement(new ElementId(103))
+            {
+                Definition = new Definition { Name = "Foo" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            var identifier = ParameterIdentifier.Parse(Guid.NewGuid().ToString() + ";Foo");
+
+            var id = doc.LookupParameterId(identifier);
+
+            Assert.NotNull(id);
+            Assert.Equal(pe.Id.GetElementIdValue(), id.Id);
+        }
+
+        [Fact]
+        public void LookupParameterId_IdNotFound_FallsBackToName()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var pe = new ParameterElement(new ElementId(104))
+            {
+                Definition = new Definition { Name = "Bar" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            var identifier = ParameterIdentifier.Parse("999;Bar");
+
+            var id = doc.LookupParameterId(identifier);
+
+            Assert.NotNull(id);
+            Assert.Equal(pe.Id.GetElementIdValue(), id.Id);
         }
 
         [Fact]

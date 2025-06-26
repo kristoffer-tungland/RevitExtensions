@@ -1,5 +1,6 @@
 using System;
 using Autodesk.Revit.DB;
+using RevitExtensions.Models;
 
 namespace RevitExtensions
 {
@@ -316,6 +317,106 @@ namespace RevitExtensions
             ElementId value)
         {
             return collector.Where(parameter.ToElementId(), comparison, value);
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing a parameter value using the parameter name.
+        /// All parameters with the matching name are combined using a logical OR.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            Document document,
+            string parameterName,
+            StringComparison comparison,
+            string value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (parameterName == null) throw new ArgumentNullException(nameof(parameterName));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            return collector.WhereByName(document, parameterName, id => CreateFilter(id, comparison, value));
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an integer parameter value using the parameter name.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            Document document,
+            string parameterName,
+            Comparison comparison,
+            int value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (parameterName == null) throw new ArgumentNullException(nameof(parameterName));
+
+            return collector.WhereByName(document, parameterName, id => CreateFilter(id, comparison, value));
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing a double parameter value using the parameter name.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            Document document,
+            string parameterName,
+            Comparison comparison,
+            double value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (parameterName == null) throw new ArgumentNullException(nameof(parameterName));
+
+            return collector.WhereByName(document, parameterName, id => CreateFilter(id, comparison, value));
+        }
+
+        /// <summary>
+        /// Filters the collector by comparing an element id parameter value using the parameter name.
+        /// </summary>
+        public static FilteredElementCollector Where(
+            this FilteredElementCollector collector,
+            Document document,
+            string parameterName,
+            Comparison comparison,
+            ElementId value)
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (parameterName == null) throw new ArgumentNullException(nameof(parameterName));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            return collector.WhereByName(document, parameterName, id => CreateFilter(id, comparison, value));
+        }
+
+        private static FilteredElementCollector WhereByName(
+            this FilteredElementCollector collector,
+            Document document,
+            string parameterName,
+            Func<ElementId, ElementParameterFilter?> create)
+        {
+            var infos = document.GetParametersByName(parameterName);
+            var filters = new System.Collections.Generic.List<ElementFilter>();
+
+            foreach (var info in infos)
+            {
+                var id = info.Identifier.ToElementId();
+                if (id == null) continue;
+                var filter = create(id);
+                if (filter != null)
+                    filters.Add(filter);
+            }
+
+            if (filters.Count == 0)
+                return collector;
+
+            ElementFilter finalFilter = filters.Count == 1
+                ? filters[0]
+                : new LogicalOrFilter(filters);
+
+            collector.WherePasses(finalFilter);
+            return collector;
         }
 
         // Removed overloads taking ParameterIdentifier or string to simplify API
