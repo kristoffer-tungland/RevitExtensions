@@ -385,10 +385,33 @@ namespace RevitExtensions
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
             var search = ParameterIdentifier.Parse(identifier);
+            return document.LookupParameterId(search);
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier by name, built-in parameter, guid or id.
+        /// Returns the first matching identifier or <c>null</c> if none are found.
+        /// Falls back to a name-based search when no matching identifier is found.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">The identifier to resolve.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, ParameterIdentifier identifier)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
             foreach (var kvp in document.GetAvailableParameters())
             {
-                if (Matches(kvp.Key, search))
+                if (Matches(kvp.Key, identifier))
                     return kvp.Key;
+            }
+
+            if (!string.IsNullOrEmpty(identifier.Name))
+            {
+                var all = document.GetParametersByName(identifier.Name);
+                if (all.Count > 0)
+                    return all[0].Identifier;
             }
 
             return null;
@@ -407,10 +430,37 @@ namespace RevitExtensions
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
             var search = ParameterIdentifier.Parse(identifier);
-            foreach (var kvp in document.GetAvailableParameters(category))
+            return document.LookupParameterId(search, category);
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier within the specified category.
+        /// Falls back to a name-based search when no matching identifier is found.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">The identifier to resolve.</param>
+        /// <param name="category">The built-in category to restrict the search to.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, ParameterIdentifier identifier, BuiltInCategory category)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var all = document.GetAvailableParameters(category);
+
+            foreach (var kvp in all)
             {
-                if (Matches(kvp.Key, search))
+                if (Matches(kvp.Key, identifier))
                     return kvp.Key;
+            }
+
+            if (!string.IsNullOrEmpty(identifier.Name))
+            {
+                foreach (var kvp in all)
+                {
+                    if (kvp.Key.Name == identifier.Name)
+                        return kvp.Key;
+                }
             }
 
             return null;
