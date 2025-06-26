@@ -22,6 +22,8 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 - `Instances()` / `Types()` – limit an existing collector to element instances or types.
 - Overloads filter by a category or multiple categories.
 - `ForEach(Action<Element>)` – enumerates the collector and disposes each element after the action executes.
+- `ForEach<T>(Action<T>)` – enumerates the collector and invokes the action for
+  elements of type `T`, disposing non-matching elements.
  - `Where(ElementId, StringComparison, string)` – filter by a string parameter value.
  - `Where(BuiltInParameter, StringComparison, string)` – filter by a string parameter using a built-in id.
  - `Where(ElementId, Comparison, int)` – filter by an integer parameter value.
