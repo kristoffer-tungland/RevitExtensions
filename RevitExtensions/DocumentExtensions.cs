@@ -421,19 +421,19 @@ namespace RevitExtensions
         /// </summary>
         /// <param name="document">The document to search.</param>
         /// <param name="name">The parameter name.</param>
-        /// <returns>A dictionary of matching parameter metadata.</returns>
-        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetParametersByName(this Document document, string name)
+        /// <returns>A list of matching parameter metadata.</returns>
+        public static System.Collections.Generic.List<ParameterMetadata> GetParametersByName(this Document document, string name)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
             if (name == null) throw new ArgumentNullException(nameof(name));
 
             var all = document.GetAvailableParameters();
-            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+            var result = new System.Collections.Generic.List<ParameterMetadata>();
 
             foreach (var kvp in all)
             {
                 if (kvp.Key.Name == name)
-                    result[kvp.Key] = kvp.Value;
+                    result.Add(kvp.Value);
             }
 
             return result;
