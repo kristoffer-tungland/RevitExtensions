@@ -401,7 +401,7 @@ namespace RevitExtensions
 
             foreach (var info in infos)
             {
-                var id = ToElementId(info.Identifier);
+                var id = info.Identifier.ToElementId();
                 if (id == null) continue;
                 var filter = create(id);
                 if (filter != null)
@@ -417,15 +417,6 @@ namespace RevitExtensions
 
             collector.WherePasses(finalFilter);
             return collector;
-        }
-
-        private static ElementId? ToElementId(ParameterIdentifier identifier)
-        {
-            if (identifier.BuiltInParameter.HasValue)
-                return identifier.BuiltInParameter.Value.ToElementId();
-            if (identifier.Id.HasValue)
-                return new ElementId((int)identifier.Id.Value);
-            return null;
         }
 
         // Removed overloads taking ParameterIdentifier or string to simplify API
