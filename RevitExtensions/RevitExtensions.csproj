@@ -33,4 +33,9 @@
   <ItemGroup Condition="'$(UseRevitApiStubs)' != 'true'">
     <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(RevitApiPackageVersion)" PrivateAssets="all" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="7.0.2" Condition="'$(TargetFramework)' == 'net48'" />
+  </ItemGroup>
 </Project>

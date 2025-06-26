@@ -1,7 +1,7 @@
 using System;
 using Autodesk.Revit.DB;
 
-namespace RevitExtensions
+namespace RevitExtensions.Models
 {
     /// <summary>
     /// Represents a parameter identifier that can be expressed as a built-in parameter,

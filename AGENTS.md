@@ -18,6 +18,23 @@ dotnet test RevitExtensions.sln -c Release -p:UseRevitApiStubs=true
 
 The stubs only support the surface area covered by the tests and should not be used in production code.
 
+When testing features that cache data to disk, the code uses a file system abstraction.
+Assign an in-memory implementation so tests do not touch the real file system:
+
+```csharp
+BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+BuiltInParameterCollector.ClearCache();
+```
+
+## Organization
+Extension methods live in the root `RevitExtensions` namespace.
+Other classes should be placed in dedicated folders and namespaces:
+
+- `Collectors` for classes that gather data (e.g. `BuiltInParameterCollector`)
+- `Models` for simple data types like `ParameterIdentifier` and `ParameterMetadata`
+- `Utilities` for helper classes such as comparers
+- `IO` for file system abstractions like `IFileSystem`
+
 ## Coding style
 Use `using var` with elements, parameters, and any other `IDisposable` objects when they are only used temporarily and not returned from the method.
 

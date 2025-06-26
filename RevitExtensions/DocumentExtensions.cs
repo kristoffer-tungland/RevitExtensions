@@ -1,5 +1,9 @@
 using System;
 using Autodesk.Revit.DB;
+using System.Collections.Generic;
+using RevitExtensions.Collectors;
+using RevitExtensions.Models;
+using RevitExtensions.Utilities;
 
 namespace RevitExtensions
 {
@@ -290,6 +294,152 @@ namespace RevitExtensions
 
             return sub;
         }
+
+        /// <summary>
+        /// Gets the available parameters for all categories in the document. This includes
+        /// built-in, project, and shared parameters. Only built-in parameters are cached.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <returns>A dictionary of parameter metadata keyed by identifier.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+
+            foreach (var kvp in BuiltInParameterCollector.GetParameters(document))
+                result[kvp.Key] = kvp.Value;
+
+            foreach (var kvp in ProjectParameterCollector.GetParameters(document))
+                result[kvp.Key] = kvp.Value;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the available built-in parameters for the specified category.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <param name="category">The built-in category.</param>
+        /// <returns>A dictionary of parameter information.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document, BuiltInCategory category)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            var all = document.GetAvailableParameters();
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+            foreach (var kvp in all)
+            {
+                if (kvp.Value.Categories.Contains(category))
+                    result[kvp.Key] = kvp.Value;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the available built-in parameters for the specified categories.
+        /// </summary>
+        /// <param name="document">The document to inspect.</param>
+        /// <param name="categories">The built-in categories.</param>
+        /// <returns>A dictionary of parameter information.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetAvailableParameters(this Document document, System.Collections.Generic.IEnumerable<BuiltInCategory> categories)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (categories == null) throw new ArgumentNullException(nameof(categories));
+
+            var set = new System.Collections.Generic.HashSet<BuiltInCategory>(categories);
+            var all = document.GetAvailableParameters();
+
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+            foreach (var kvp in all)
+            {
+                if (kvp.Value.Categories.Overlaps(set))
+                    result[kvp.Key] = kvp.Value;
+            }
+            return result;
+        }
+
+        private static bool Matches(ParameterIdentifier candidate, ParameterIdentifier search)
+        {
+            if (search.BuiltInParameter.HasValue)
+                return candidate.BuiltInParameter == search.BuiltInParameter;
+            if (search.Guid.HasValue)
+                return candidate.Guid == search.Guid;
+            if (search.Id.HasValue)
+                return candidate.Id == search.Id;
+            if (!string.IsNullOrEmpty(search.Name))
+                return candidate.Name == search.Name;
+            return false;
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier by name, built-in parameter, guid or id.
+        /// Returns the first matching identifier or <c>null</c> if none are found.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">A string representation of the parameter.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, string identifier)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var search = ParameterIdentifier.Parse(identifier);
+            foreach (var kvp in document.GetAvailableParameters())
+            {
+                if (Matches(kvp.Key, search))
+                    return kvp.Key;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier within the specified category.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">A string representation of the parameter.</param>
+        /// <param name="category">The built-in category to restrict the search to.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, string identifier, BuiltInCategory category)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var search = ParameterIdentifier.Parse(identifier);
+            foreach (var kvp in document.GetAvailableParameters(category))
+            {
+                if (Matches(kvp.Key, search))
+                    return kvp.Key;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets all available parameters with the specified name.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="name">The parameter name.</param>
+        /// <returns>A list of matching parameter metadata.</returns>
+        public static System.Collections.Generic.List<ParameterMetadata> GetParametersByName(this Document document, string name)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            var all = document.GetAvailableParameters();
+            var result = new System.Collections.Generic.List<ParameterMetadata>();
+
+            foreach (var kvp in all)
+            {
+                if (kvp.Key.Name == name)
+                    result.Add(kvp.Value);
+            }
+
+            return result;
+        }
+
+
     }
 }
 
