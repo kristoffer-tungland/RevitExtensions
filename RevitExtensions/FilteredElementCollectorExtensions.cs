@@ -178,6 +178,53 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Invokes an action for each element of type <typeparamref name="T"/> in the collector.
+        /// Elements not assignable to <typeparamref name="T"/> are disposed and skipped.
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="collector">The collector to enumerate.</param>
+        /// <param name="action">The action to invoke for each element.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="collector"/> or <paramref name="action"/> is null.
+        /// </exception>
+        public static void ForEach<T>(this FilteredElementCollector collector, Action<T> action) where T : Element
+        {
+            if (collector == null) throw new ArgumentNullException(nameof(collector));
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            var enumerator = collector.GetEnumerator();
+            try
+            {
+                while (enumerator.MoveNext())
+                {
+                    var element = enumerator.Current;
+                    if (element is T typed)
+                    {
+                        try
+                        {
+                            action(typed);
+                        }
+                        finally
+                        {
+                            typed.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        if (element is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                (enumerator as IDisposable)?.Dispose();
+            }
+        }
+
+        /// <summary>
         /// Filters the collector by comparing a parameter value.
         /// </summary>
         /// <param name="collector">The collector to filter.</param>

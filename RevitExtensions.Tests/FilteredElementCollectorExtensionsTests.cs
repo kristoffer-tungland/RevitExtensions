@@ -29,6 +29,25 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void ForEach_Generic_SkipsNonMatchingElements()
+        {
+            var doc = new Document();
+            var collector = new FilteredElementCollector(doc);
+
+            var wall = new Wall(new ElementId(1));
+            var other = new Element(new ElementId(2));
+            collector.AddElement(wall);
+            collector.AddElement(other);
+
+            var results = new List<Wall>();
+            collector.ForEach<Wall>(results.Add);
+
+            Assert.Equal(new[] { wall }, results);
+            Assert.True(wall.IsDisposed);
+            Assert.True(other.IsDisposed);
+        }
+
+        [Fact]
         public void InstancesOf_MultiCategories_FiltersCollector()
         {
             var doc = new Document();
