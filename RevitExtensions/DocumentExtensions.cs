@@ -359,6 +359,86 @@ namespace RevitExtensions
             return result;
         }
 
+        private static bool Matches(ParameterIdentifier candidate, ParameterIdentifier search)
+        {
+            if (search.BuiltInParameter.HasValue)
+                return candidate.BuiltInParameter == search.BuiltInParameter;
+            if (search.Guid.HasValue)
+                return candidate.Guid == search.Guid;
+            if (search.Id.HasValue)
+                return candidate.Id == search.Id;
+            if (!string.IsNullOrEmpty(search.Name))
+                return candidate.Name == search.Name;
+            return false;
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier by name, built-in parameter, guid or id.
+        /// Returns the first matching identifier or <c>null</c> if none are found.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">A string representation of the parameter.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, string identifier)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var search = ParameterIdentifier.Parse(identifier);
+            foreach (var kvp in document.GetAvailableParameters())
+            {
+                if (Matches(kvp.Key, search))
+                    return kvp.Key;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Looks up a parameter identifier within the specified category.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="identifier">A string representation of the parameter.</param>
+        /// <param name="category">The built-in category to restrict the search to.</param>
+        /// <returns>The first matching identifier or null.</returns>
+        public static ParameterIdentifier? LookupParameterId(this Document document, string identifier, BuiltInCategory category)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            var search = ParameterIdentifier.Parse(identifier);
+            foreach (var kvp in document.GetAvailableParameters(category))
+            {
+                if (Matches(kvp.Key, search))
+                    return kvp.Key;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets all available parameters with the specified name.
+        /// </summary>
+        /// <param name="document">The document to search.</param>
+        /// <param name="name">The parameter name.</param>
+        /// <returns>A dictionary of matching parameter metadata.</returns>
+        public static System.Collections.Generic.IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata> GetParametersByName(this Document document, string name)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            var all = document.GetAvailableParameters();
+            var result = new System.Collections.Generic.Dictionary<ParameterIdentifier, ParameterMetadata>(new ParameterIdentifierComparer());
+
+            foreach (var kvp in all)
+            {
+                if (kvp.Key.Name == name)
+                    result[kvp.Key] = kvp.Value;
+            }
+
+            return result;
+        }
+
 
     }
 }

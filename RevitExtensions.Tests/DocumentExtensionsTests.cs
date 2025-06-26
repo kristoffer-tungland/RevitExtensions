@@ -2,6 +2,7 @@ using System;
 using Autodesk.Revit.DB;
 using RevitExtensions;
 using RevitExtensions.Collectors;
+using RevitExtensions.Models;
 using Xunit;
 
 namespace RevitExtensions.Tests
@@ -286,6 +287,84 @@ namespace RevitExtensions.Tests
 
             Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1");
             Assert.Contains(parameters.Keys, k => k.Name == "Proj");
+        }
+
+        [Fact]
+        public void LookupParameterId_Name_ReturnsFirstMatch()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var element = new Element(doc, new ElementId(1));
+            element.Parameters.Add(new Parameter((BuiltInParameter)(-1)) { Definition = { Name = "Bip" } });
+            doc.AddElement(element);
+
+            var pe = new ParameterElement(new ElementId(101))
+            {
+                Definition = new Definition { Name = "Bip" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            var id = doc.LookupParameterId("Bip");
+
+            Assert.NotNull(id);
+            Assert.Equal((BuiltInParameter)(-1), id.BuiltInParameter);
+        }
+
+        [Fact]
+        public void LookupParameterId_Category_ReturnsMatchOnlyInCategory()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var element = new Element(doc, new ElementId(2));
+            element.Parameters.Add(new Parameter((BuiltInParameter)(-2)) { Definition = { Name = "Foo" } });
+            doc.AddElement(element);
+
+            var id = doc.LookupParameterId("Foo", BuiltInCategory.GenericModel);
+
+            Assert.NotNull(id);
+            Assert.Equal((BuiltInParameter)(-2), id.BuiltInParameter);
+        }
+
+        [Fact]
+        public void GetParametersByName_ReturnsAllMatches()
+        {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
+            var doc = new Document();
+            doc.Application.VersionNumber = "2026";
+            var cat = new Category(BuiltInCategory.GenericModel);
+            doc.Settings.Categories.Add(cat);
+
+            var element = new Element(doc, new ElementId(3));
+            element.Parameters.Add(new Parameter((BuiltInParameter)(-3)) { Definition = { Name = "Bar" } });
+            doc.AddElement(element);
+
+            var pe = new ParameterElement(new ElementId(102))
+            {
+                Definition = new Definition { Name = "Bar" },
+                IsInstance = true
+            };
+            pe.Categories.Add(BuiltInCategory.GenericModel);
+            doc.AddElement(pe);
+
+            var result = doc.GetParametersByName("Bar");
+
+            Assert.Equal(2, result.Count);
         }
     }
 }
