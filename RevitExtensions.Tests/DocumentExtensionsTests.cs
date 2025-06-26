@@ -261,6 +261,9 @@ namespace RevitExtensions.Tests
         [Fact]
         public void GetAvailableParameters_ReturnsBuiltInAndProject()
         {
+            BuiltInParameterCollector.ClearCache();
+            BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
+
             var doc = new Document();
             doc.Application.VersionNumber = "2026";
             var cat = new Category(BuiltInCategory.GenericModel);

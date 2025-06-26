@@ -31,11 +31,40 @@ namespace RevitExtensions
     }
 
     /// <summary>
+    /// Abstraction for file system access used by <see cref="BuiltInParameterCollector"/>.
+    /// </summary>
+    public interface IFileSystem
+    {
+        bool FileExists(string path);
+        string ReadAllText(string path);
+        void WriteAllText(string path, string contents);
+        void CreateDirectory(string path);
+    }
+
+    internal sealed class PhysicalFileSystem : IFileSystem
+    {
+        public bool FileExists(string path) => File.Exists(path);
+        public string ReadAllText(string path) => File.ReadAllText(path);
+        public void WriteAllText(string path, string contents) => File.WriteAllText(path, contents);
+        public void CreateDirectory(string path) => Directory.CreateDirectory(path);
+    }
+
+    /// <summary>
     /// Collects and caches built-in parameters available in a document.
     /// </summary>
     public static class BuiltInParameterCollector
     {
         private static IReadOnlyDictionary<ParameterIdentifier, ParameterMetadata>? _cache;
+
+        /// <summary>
+        /// Gets or sets the file system abstraction used for cache operations.
+        /// </summary>
+        public static IFileSystem FileSystem { get; set; } = new PhysicalFileSystem();
+
+        /// <summary>
+        /// Clears the in-memory cache. Used primarily for tests.
+        /// </summary>
+        public static void ClearCache() => _cache = null;
 
         private static string GetCachePath(Document doc)
         {
@@ -73,11 +102,11 @@ namespace RevitExtensions
 
             var cachePath = GetCachePath(doc);
 
-            if (File.Exists(cachePath))
+            if (FileSystem.FileExists(cachePath))
             {
                 try
                 {
-                    var json = File.ReadAllText(cachePath);
+                    var json = FileSystem.ReadAllText(cachePath);
                     var list = JsonSerializer.Deserialize<List<SerializableInfo>>(json);
                     if (list != null)
                     {
@@ -124,8 +153,8 @@ namespace RevitExtensions
                         Categories = v.Categories.ToArray()
                     });
                 }
-                Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                File.WriteAllText(cachePath, JsonSerializer.Serialize(list));
+                FileSystem.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                FileSystem.WriteAllText(cachePath, JsonSerializer.Serialize(list));
             }
             catch
             {
