@@ -1,53 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.IO;
+using RevitExtensions.IO;
+using RevitExtensions.Models;
+using RevitExtensions.Utilities;
 using System.Text.Json;
 using Autodesk.Revit.DB;
 
-namespace RevitExtensions
+namespace RevitExtensions.Collectors
 {
-    /// <summary>
-    /// Information about a parameter available in the document.
-    /// </summary>
-    public class ParameterMetadata
-    {
-        /// <summary>
-        /// Gets or sets the identifier for the built-in parameter.
-        /// The identifier stores both the enumeration value and the parameter name.
-        /// </summary>
-        public ParameterIdentifier Identifier { get; set; } = new ParameterIdentifier();
 
-        /// <summary>
-        /// Gets or sets a value indicating whether the parameter comes from an instance
-        /// (<c>true</c>) or from the element type (<c>false</c>).
-        /// </summary>
-        public bool IsInstance { get; set; }
-
-        /// <summary>
-        /// Gets the categories the parameter applies to.
-        /// </summary>
-        public HashSet<BuiltInCategory> Categories { get; } = new HashSet<BuiltInCategory>();
-    }
-
-    /// <summary>
-    /// Abstraction for file system access used by <see cref="BuiltInParameterCollector"/>.
-    /// </summary>
-    public interface IFileSystem
-    {
-        bool FileExists(string path);
-        string ReadAllText(string path);
-        void WriteAllText(string path, string contents);
-        void CreateDirectory(string path);
-    }
-
-    internal sealed class PhysicalFileSystem : IFileSystem
-    {
-        public bool FileExists(string path) => File.Exists(path);
-        public string ReadAllText(string path) => File.ReadAllText(path);
-        public void WriteAllText(string path, string contents) => File.WriteAllText(path, contents);
-        public void CreateDirectory(string path) => Directory.CreateDirectory(path);
-    }
 
     /// <summary>
     /// Collects and caches built-in parameters available in a document.

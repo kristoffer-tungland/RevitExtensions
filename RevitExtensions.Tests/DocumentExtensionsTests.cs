@@ -1,6 +1,7 @@
 using System;
 using Autodesk.Revit.DB;
 using RevitExtensions;
+using RevitExtensions.Collectors;
 using Xunit;
 
 namespace RevitExtensions.Tests

@@ -26,6 +26,15 @@ BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
 BuiltInParameterCollector.ClearCache();
 ```
 
+## Organization
+Extension methods live in the root `RevitExtensions` namespace.
+Other classes should be placed in dedicated folders and namespaces:
+
+- `Collectors` for classes that gather data (e.g. `BuiltInParameterCollector`)
+- `Models` for simple data types like `ParameterIdentifier` and `ParameterMetadata`
+- `Utilities` for helper classes such as comparers
+- `IO` for file system abstractions like `IFileSystem`
+
 ## Coding style
 Use `using var` with elements, parameters, and any other `IDisposable` objects when they are only used temporarily and not returned from the method.
 

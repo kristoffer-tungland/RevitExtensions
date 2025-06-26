@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
+using RevitExtensions.Models;
+using RevitExtensions.Utilities;
 
-namespace RevitExtensions
+namespace RevitExtensions.Collectors
 {
     /// <summary>
     /// Collects project and shared parameters available in a document.

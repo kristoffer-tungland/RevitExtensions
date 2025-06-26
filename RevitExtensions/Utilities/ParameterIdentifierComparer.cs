@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 
-namespace RevitExtensions
+using RevitExtensions.Models;
+
+namespace RevitExtensions.Utilities
 {
     /// <summary>
     /// Equality comparer for <see cref="ParameterIdentifier"/> based on its stable representation.
