@@ -7,67 +7,40 @@ This repository contains helper extensions for the Autodesk Revit API. The goal 
 ```csharp
 using Autodesk.Revit.DB;
 using RevitExtensions;
+using RevitExtensions.Models;
 
-// start a transaction and update a parameter
-using var tx = document.StartTransaction("Set parameter");
-element.SetParameterValue("Comments", "Hello");
+// update a parameter inside a transaction group
+using var group = document.StartTransactionGroup("Modify");
+using var tx = document.StartTransaction("Set comment");
+var pid = document.LookupParameterId("Comments");
+if (pid != null)
+{
+    element.SetParameterValue(pid, "Hello");
+}
 tx.CommitAndEnsure();
+group.AssimilateAndEnsure();
 
-// get all wall instances in the document
-var walls = document.InstancesOf<Wall>().ToElements();
+// simple filter by parameter name
+document.InstancesOf<Wall>()
+    .Where(document, "Fire Rating", StringComparison.Contains, "120")
+    .ForEach(w => w.SetParameterValue("HasFireResistant", true));
 
-// get all element types in the document
-var allTypes = document.Types().ToElements();
-
-// retrieve an element id as a long
-long id = element.GetElementIdValue();
-
-// filter walls by a parameter value
-var exteriorWalls = document.InstancesOf<Wall>()
-    .Where(new ElementId(10), StringComparison.Equals, "Exterior")
-    .ToElements();
-
-// combine multiple rules
-var fireConcrete = document.InstancesOf<Wall>()
-    .WhereAnd(
-        (new ElementId(20), StringComparison.Contains, "Fire"),
-        (new ElementId(21), StringComparison.Equals, "Concrete"))
-    .ToElements();
-
-// filter by multiple values for one parameter
-var codes = new[] { "A", "B" };
-var multi = document.InstancesOf<Wall>()
-    .WhereOr(new ElementId(20), StringComparison.Equals, codes)
-    .ToElements();
-
-// wildcard string comparison
-var fooBar = document.InstancesOf<Wall>()
-    .Where(new ElementId(25), StringComparison.Wildcard, "foo*bar")
-    .ToElements();
-
-var fooIsBar = document.InstancesOf<Wall>()
-    .Where(new ElementId(25), StringComparison.Wildcard, "foo*is*bar")
-    .ToElements();
-
-// combine sets of filters
-var complex = document.InstancesOf<Wall>()
+// complex nested parameter filter
+var walls = document.InstancesOf<Wall>()
     .Where(b => b
         .OrSet(
             (new ElementId(20), StringComparison.Equals, "A"),
             (new ElementId(20), StringComparison.Equals, "B"))
-        .Rule(new ElementId(21), StringComparison.Equals, "C"))
+        .AndSet(and => and
+            .Rule(new ElementId(21), StringComparison.Contains, "Load")
+            .Rule(new ElementId(22), StringComparison.Wildcard, "*500*")))
     .ToElements();
 
-// multiple levels of nested sets
-var nested = document.InstancesOf<Wall>()
-    .Where(b => b
-        .OrSet(or => or
-            .Rule(new ElementId(30), StringComparison.Equals, "A")
-            .AndSet(and => and
-                .Rule(new ElementId(31), StringComparison.Equals, "B")
-                .Rule(new ElementId(32), StringComparison.Equals, "C")))
-        .Rule(new ElementId(33), StringComparison.Equals, "D"))
-    .ToElements();
+// convert ids and check editing status
+long idValue = walls[0].Id.GetElementIdValue();
+ElementId elementId = idValue.ToElementId();
+bool editable = walls[0].CanEdit(out var status);
+string statusText = status.ToFriendlyString();
 ```
 
 
@@ -118,6 +91,11 @@ The library exposes helpers for common Revit API patterns.
     `null` when the id does not exist.
 - `StartTransaction`, `StartTransactionGroup` and `StartSubTransaction` start
   the respective transaction object and ensure it began successfully.
+- `GetAvailableParameters()` – list project and built‑in parameters available in
+  the document. Overloads restrict the search to specific categories.
+- `LookupParameterId()` – resolve a parameter identifier by name, id or
+  built‑in value.
+- `GetParametersByName()` – find all parameters with a given name.
 
 ### FilteredElementCollectorExtensions
 
@@ -150,6 +128,8 @@ The library exposes helpers for common Revit API patterns.
 
 - `GetElementIdValue()` – returns the element id as a `long` regardless of
   Revit version.
+- `GetElementIdValue(ElementId)` – retrieve the numeric value of an
+  `ElementId` without depending on the Revit version.
 - `ToElement()` – retrieve an element from a document by id. Generic overload
   casts the result to the specified element type.
 - `CanEdit(out EditStatus)` – determines if the element can be edited in the
@@ -162,6 +142,10 @@ The library exposes helpers for common Revit API patterns.
   its type using a flexible `ParameterIdentifier` or name.
 - `GetParameterValue` and `SetParameterValue` – read and write parameter values
   with automatic type conversion.
+- Generic overloads of `GetParameterValue` and `LookupParameterValue` return the
+  requested type directly.
+- `TrySetParameterValue` methods expose failure reasons without throwing
+  exceptions.
 
 ### BuiltInParameterExtensions
 
@@ -177,4 +161,23 @@ The library exposes helpers for common Revit API patterns.
 
 Represents a parameter by name, GUID, built‑in parameter or element id. It can
 be parsed from a string and provides a stable representation.
+
+### ParameterFilterSetBuilder and ParameterFilterSet
+
+Compose complex `ElementFilter` instances using nested AND/OR parameter rules.
+The builder API mirrors the collector extension methods.
+
+### NumericExtensions
+
+`int` and `long` values include `ToElementId()` helpers for convenience.
+
+### BuiltInParameterCollector
+
+Retrieves metadata about built‑in parameters in a document and caches the
+information to disk.
+
+### ParameterMetadata
+
+Describes a parameter found in the document, including the categories it applies
+to and whether it is an instance or type parameter.
 
