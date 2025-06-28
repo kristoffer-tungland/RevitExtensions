@@ -139,6 +139,8 @@ namespace Autodesk.Revit.DB
 
         private readonly System.Collections.Generic.Dictionary<ElementId, string> _owners = new System.Collections.Generic.Dictionary<ElementId, string>();
         private readonly System.Collections.Generic.Dictionary<long, Element> _elements = new System.Collections.Generic.Dictionary<long, Element>();
+        private readonly System.Collections.Generic.Dictionary<XYZ, Autodesk.Revit.DB.Architecture.Room> _rooms = new System.Collections.Generic.Dictionary<XYZ, Autodesk.Revit.DB.Architecture.Room>();
+        private readonly System.Collections.Generic.Dictionary<XYZ, Autodesk.Revit.DB.Mechanical.Space> _spaces = new System.Collections.Generic.Dictionary<XYZ, Autodesk.Revit.DB.Mechanical.Space>();
 
         /// <summary>
         /// Gets the parameter bindings in the document keyed by parameter name.
@@ -186,6 +188,50 @@ namespace Autodesk.Revit.DB
         internal System.Collections.Generic.IEnumerable<Element> GetElements()
         {
             return _elements.Values;
+        }
+
+        /// <summary>
+        /// Retrieves a room located at the given point.
+        /// </summary>
+        /// <param name="point">Point to look up.</param>
+        /// <returns>The room at that point or <c>null</c>.</returns>
+        public Autodesk.Revit.DB.Architecture.Room GetRoomAtPoint(XYZ point)
+        {
+            _rooms.TryGetValue(point, out var room);
+            return room;
+        }
+
+        /// <summary>
+        /// Retrieves a space located at the given point.
+        /// </summary>
+        /// <param name="point">Point to look up.</param>
+        /// <returns>The space at that point or <c>null</c>.</returns>
+        public Autodesk.Revit.DB.Mechanical.Space GetSpaceAtPoint(XYZ point)
+        {
+            _spaces.TryGetValue(point, out var space);
+            return space;
+        }
+
+        /// <summary>
+        /// Adds a room at the specified point for tests that perform lookups.
+        /// </summary>
+        /// <param name="room">The room to register.</param>
+        /// <param name="point">The lookup location.</param>
+        public void AddRoom(Autodesk.Revit.DB.Architecture.Room room, XYZ point)
+        {
+            if (room == null) throw new ArgumentNullException(nameof(room));
+            _rooms[point] = room;
+        }
+
+        /// <summary>
+        /// Adds a space at the specified point for tests that perform lookups.
+        /// </summary>
+        /// <param name="space">The space to register.</param>
+        /// <param name="point">The lookup location.</param>
+        public void AddSpace(Autodesk.Revit.DB.Mechanical.Space space, XYZ point)
+        {
+            if (space == null) throw new ArgumentNullException(nameof(space));
+            _spaces[point] = space;
         }
     }
 
@@ -493,6 +539,93 @@ namespace Autodesk.Revit.DB
 
     public class ParameterSet : System.Collections.Generic.List<Parameter>
     {
+    }
+
+    /// <summary>
+    /// Simple coordinate representation used by the stubs.
+    /// </summary>
+    public class XYZ : System.IEquatable<XYZ>
+    {
+        /// <summary>Gets the X value.</summary>
+        public double X { get; }
+        /// <summary>Gets the Y value.</summary>
+        public double Y { get; }
+        /// <summary>Gets the Z value.</summary>
+        public double Z { get; }
+
+        /// <summary>Creates a new coordinate.</summary>
+        public XYZ(double x, double y, double z)
+        {
+            X = x; Y = y; Z = z;
+        }
+
+        public bool Equals(XYZ other)
+        {
+            return other != null && X == other.X && Y == other.Y && Z == other.Z;
+        }
+
+        public override bool Equals(object obj) => obj is XYZ xyz && Equals(xyz);
+
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+        public override int GetHashCode() => System.HashCode.Combine(X, Y, Z);
+#else
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + X.GetHashCode();
+                hash = hash * 23 + Y.GetHashCode();
+                hash = hash * 23 + Z.GetHashCode();
+                return hash;
+            }
+        }
+#endif
+    }
+
+    /// <summary>
+    /// Simple phase placeholder used by tests.
+    /// </summary>
+    public class Phase : Element
+    {
+        /// <summary>Initializes the phase with an id.</summary>
+        public Phase(ElementId id) : base(id) { }
+    }
+
+    /// <summary>
+    /// Base class for room and space placeholders.
+    /// </summary>
+    public abstract class SpatialElement : Element
+    {
+        /// <summary>Gets or sets the phase of the spatial element.</summary>
+        public Phase Phase { get; set; }
+
+        /// <summary>Creates a spatial element with the given id.</summary>
+        protected SpatialElement(ElementId id) : base(id) { }
+    }
+
+    namespace Architecture
+    {
+        /// <summary>
+        /// Minimal room placeholder for tests.
+        /// </summary>
+        public class Room : SpatialElement
+        {
+            /// <summary>Creates a room with the given id.</summary>
+            public Room(ElementId id) : base(id) { }
+        }
+    }
+
+    namespace Mechanical
+    {
+        /// <summary>
+        /// Minimal space placeholder for tests.
+        /// </summary>
+        public class Space : SpatialElement
+        {
+            /// <summary>Creates a space with the given id.</summary>
+            public Space(ElementId id) : base(id) { }
+        }
     }
 
     /// <summary>
