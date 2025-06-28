@@ -74,6 +74,21 @@ All extension methods live in the `RevitExtensions` namespace. The library expos
 
 Represents a parameter by name, GUID, built‑in parameter or element id. It can be parsed from a string and provides a stable representation.
 
+### SpatialElementExtensions
+
+- `SetRoom(Room, Phase?)` – store a reference to a room for the element.
+- `SetRoom(XYZ, Phase?)` – store a point used to resolve the room at runtime.
+- `SetSpace(Space, Phase?)` – store a reference to a space for the element.
+- `SetSpace(XYZ, Phase?)` – store a point used to resolve the space.
+- `GetRoom(Phase?)` – retrieve the associated room if available.
+- `GetSpace(Phase?)` – retrieve the associated space if available.
+- `GetRoomOrSpace(Phase?)` – return either the room or space.
+- `GetStoredRoomIds()` – dictionary of phase to stored room id.
+- `GetStoredSpaceIds()` – dictionary of phase to stored space id.
+- `GetStoredRoomPoints()` – dictionary of phase to stored room point.
+- `GetStoredSpacePoints()` – dictionary of phase to stored space point.
+- `HasStoredRoomOrSpace()` – returns true if any association exists.
+
 ### ParameterFilterSetBuilder and ParameterFilterSet
 
 Compose complex `ElementFilter` instances using nested AND/OR parameter rules. The builder API mirrors the collector extension methods.

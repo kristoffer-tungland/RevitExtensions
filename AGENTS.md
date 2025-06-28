@@ -42,3 +42,8 @@ To account for API differences across Revit versions, conditional compilation sy
 
 All projects should enable C# nullable reference types by setting `<Nullable>enable</Nullable>` in the project file. Methods, properties and fields must be annotated with `?` when they can contain `null`.
 Extension methods that wrap Revit API calls should reflect the API's nullability. If `Document.GetElement` might return `null`, your wrapper should return `Element?`.
+
+## Documentation
+All public methods must include XML summary comments describing what the method
+does and detailing its parameters. Keep these comments short and informative so
+they remain easy to read.
