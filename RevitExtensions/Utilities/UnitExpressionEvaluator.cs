@@ -33,7 +33,7 @@ namespace RevitExtensions.Utilities
 
             double defaultScale = 1.0;
             var doc = parameter?.Element?.Document;
-#if REVIT2022_OR_LESS && !REVIT2023_OR_ABOVE
+#if REVIT2021_OR_LESS
             if (doc != null)
             {
                 var ut = parameter.Definition.ParameterType == ParameterType.Length
@@ -47,7 +47,7 @@ namespace RevitExtensions.Utilities
             {
                 var spec = parameter.Definition.GetDataType();
                 if (spec == null || spec.Empty())
-                    spec = SpecTypeId.Number.Length;
+                    spec = SpecTypeId.Length;
                 var fo = doc.GetUnits().GetFormatOptions(spec);
                 defaultScale = UnitUtils.ConvertToInternalUnits(1, fo.GetUnitTypeId());
             }
@@ -57,7 +57,7 @@ namespace RevitExtensions.Utilities
             {
                 var number = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 var unit = m.Groups[2].Value.ToLowerInvariant();
-#if REVIT2022_OR_LESS && !REVIT2023_OR_ABOVE
+#if REVIT2021_OR_LESS
                 double scaled = unit switch
                 {
                     "m" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_METERS),

@@ -40,7 +40,7 @@ namespace Autodesk.Revit.DB
         }
     }
 
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
     public enum UnitType
     {
         UT_Length
@@ -67,17 +67,18 @@ namespace Autodesk.Revit.DB
 
     public class FormatOptions
     {
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
         public DisplayUnitType DisplayUnits { get; set; } = DisplayUnitType.Feet;
 #else
         public ForgeTypeId UnitTypeId { get; set; } = Autodesk.Revit.DB.UnitTypeId.Feet;
         public ForgeTypeId GetUnitTypeId() => UnitTypeId;
+        public void SetUnitTypeId(ForgeTypeId id) => UnitTypeId = id;
 #endif
     }
 
     public class Units
     {
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
         private readonly System.Collections.Generic.Dictionary<UnitType, FormatOptions> _map = new System.Collections.Generic.Dictionary<UnitType, FormatOptions>();
         public FormatOptions GetFormatOptions(UnitType unitType)
         {
@@ -99,7 +100,7 @@ namespace Autodesk.Revit.DB
 
     public static class UnitUtils
     {
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
         public static double ConvertToInternalUnits(double value, DisplayUnitType units)
         {
             return units switch
@@ -521,7 +522,7 @@ namespace Autodesk.Revit.DB
         ElementId,
     }
 
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
     /// <summary>
     /// Simplified list of parameter data types used in older Revit versions.
     /// Only members required by tests are included.
@@ -556,7 +557,7 @@ namespace Autodesk.Revit.DB
     public class Definition
     {
         public string Name { get; set; }
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
         public ParameterType ParameterType { get; set; }
 #else
         public ForgeTypeId DataType { get; set; } = new ForgeTypeId(string.Empty);

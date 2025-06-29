@@ -17,7 +17,7 @@ namespace RevitExtensions
         public static void SetTestLengthUnitScale(this Document document, double scale)
         {
             var units = document.GetUnits();
-#if REVIT2022_OR_LESS && !REVIT2023_OR_ABOVE
+#if REVIT2021_OR_LESS
             var fo = units.GetFormatOptions(UnitType.UT_Length) ?? new FormatOptions();
             fo.DisplayUnits = scale switch
             {
@@ -29,8 +29,8 @@ namespace RevitExtensions
             };
             units.SetFormatOptions(UnitType.UT_Length, fo);
 #else
-            var fo = units.GetFormatOptions(SpecTypeId.Number.Length) ?? new FormatOptions();
-            fo.UnitTypeId = scale switch
+            var fo = units.GetFormatOptions(SpecTypeId.Length) ?? new FormatOptions();
+            var unitId = scale switch
             {
                 1.0 => UnitTypeId.Feet,
                 0.00328083989501312 => UnitTypeId.Millimeters,
@@ -38,7 +38,8 @@ namespace RevitExtensions
                 3.28083989501312 => UnitTypeId.Meters,
                 _ => UnitTypeId.Feet
             };
-            units.SetFormatOptions(SpecTypeId.Number.Length, fo);
+            fo.SetUnitTypeId(unitId);
+            units.SetFormatOptions(SpecTypeId.Length, fo);
 #endif
         }
     }

@@ -43,5 +43,8 @@ namespace Autodesk.Revit.DB
             public static ForgeTypeId ElectricalCurrent { get; } = new ForgeTypeId("spec:electrical:current");
             public static ForgeTypeId ElectricalPower { get; } = new ForgeTypeId("spec:electrical:power");
         }
+
+        // Top-level aliases used by newer APIs
+        public static ForgeTypeId Length { get; } = Number.Length;
     }
 }

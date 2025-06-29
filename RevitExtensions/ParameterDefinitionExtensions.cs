@@ -14,7 +14,7 @@ namespace RevitExtensions
         /// <returns>The data type identifier.</returns>
         public static ForgeTypeId GetDataType(this Definition definition)
         {
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
             return definition.ParameterType.ToForgeTypeId();
 #else
             // For newer APIs this instance method already exists.

@@ -1,4 +1,4 @@
-#if REVIT2022_OR_LESS
+#if REVIT2021_OR_LESS
 namespace Autodesk.Revit.DB
 {
     /// <summary>
