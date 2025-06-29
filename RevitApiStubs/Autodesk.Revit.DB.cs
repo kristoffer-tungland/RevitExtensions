@@ -16,6 +16,7 @@ namespace Autodesk.Revit.DB
         public ElementId(int value) => IntegerValue = value;
 #endif
 
+
         public override bool Equals(object? obj)
         {
             if (obj is ElementId other)
@@ -37,6 +38,91 @@ namespace Autodesk.Revit.DB
             return IntegerValue.GetHashCode();
 #endif
         }
+    }
+
+#if REVIT2022_OR_LESS
+    public enum UnitType
+    {
+        UT_Length
+    }
+
+    public enum DisplayUnitType
+    {
+        DUT_DECIMAL_FEET,
+        DUT_DECIMAL_INCHES,
+        DUT_METERS,
+        DUT_CENTIMETERS,
+        DUT_MILLIMETERS
+    }
+#else
+    public static class UnitTypeId
+    {
+        public static ForgeTypeId Feet { get; } = new ForgeTypeId("unit:feet");
+        public static ForgeTypeId Inches { get; } = new ForgeTypeId("unit:inch");
+        public static ForgeTypeId Meters { get; } = new ForgeTypeId("unit:meter");
+        public static ForgeTypeId Centimeters { get; } = new ForgeTypeId("unit:centimeter");
+        public static ForgeTypeId Millimeters { get; } = new ForgeTypeId("unit:millimeter");
+    }
+#endif
+
+    public class FormatOptions
+    {
+#if REVIT2022_OR_LESS
+        public DisplayUnitType DisplayUnits { get; set; } = DisplayUnitType.Feet;
+#else
+        public ForgeTypeId UnitTypeId { get; set; } = Autodesk.Revit.DB.UnitTypeId.Feet;
+        public ForgeTypeId GetUnitTypeId() => UnitTypeId;
+#endif
+    }
+
+    public class Units
+    {
+#if REVIT2022_OR_LESS
+        private readonly System.Collections.Generic.Dictionary<UnitType, FormatOptions> _map = new System.Collections.Generic.Dictionary<UnitType, FormatOptions>();
+        public FormatOptions GetFormatOptions(UnitType unitType)
+        {
+            _map.TryGetValue(unitType, out var fo);
+            return fo ?? new FormatOptions();
+        }
+        public void SetFormatOptions(UnitType unitType, FormatOptions options) => _map[unitType] = options;
+#else
+        private readonly System.Collections.Generic.Dictionary<ForgeTypeId, FormatOptions> _map = new System.Collections.Generic.Dictionary<ForgeTypeId, FormatOptions>();
+        public FormatOptions GetFormatOptions(ForgeTypeId spec)
+        {
+            _map.TryGetValue(spec, out var fo);
+            return fo ?? new FormatOptions();
+        }
+        public System.Collections.Generic.IEnumerable<ForgeTypeId> GetFormatOptionsSpecTypes() => _map.Keys;
+        public void SetFormatOptions(ForgeTypeId spec, FormatOptions options) => _map[spec] = options;
+#endif
+    }
+
+    public static class UnitUtils
+    {
+#if REVIT2022_OR_LESS
+        public static double ConvertToInternalUnits(double value, DisplayUnitType units)
+        {
+            return units switch
+            {
+                DisplayUnitType.Feet => value,
+                DisplayUnitType.Inches => value / 12.0,
+                DisplayUnitType.Meters => value * 3.28083989501312,
+                DisplayUnitType.DUT_CENTIMETERS => value * 0.0328083989501312,
+                DisplayUnitType.DUT_MILLIMETERS => value * 0.00328083989501312,
+                _ => value
+            };
+        }
+#else
+        public static double ConvertToInternalUnits(double value, ForgeTypeId unitTypeId)
+        {
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Feet) return value;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Inches) return value / 12.0;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Meters) return value * 3.28083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Centimeters) return value * 0.0328083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Millimeters) return value * 0.00328083989501312;
+            return value;
+        }
+#endif
     }
 
     /// <summary>
@@ -149,6 +235,10 @@ namespace Autodesk.Revit.DB
         public BindingMap ParameterBindings { get; } = new BindingMap();
 
         public Settings Settings { get; } = new Settings();
+
+        public Units Units { get; } = new Units();
+
+        public Units GetUnits() => Units;
 
         public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
 

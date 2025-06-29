@@ -1,4 +1,3 @@
-#if REVIT2022_OR_LESS
 namespace Autodesk.Revit.DB
 {
     /// <summary>
@@ -32,7 +31,7 @@ namespace Autodesk.Revit.DB
 
         public static class Number
         {
-            public static ForgeTypeId Number { get; } = new ForgeTypeId("spec:number");
+            public static ForgeTypeId General { get; } = new ForgeTypeId("spec:number");
             public static ForgeTypeId Length { get; } = new ForgeTypeId("spec:length");
             public static ForgeTypeId Area { get; } = new ForgeTypeId("spec:area");
             public static ForgeTypeId Volume { get; } = new ForgeTypeId("spec:volume");
@@ -46,4 +45,3 @@ namespace Autodesk.Revit.DB
         }
     }
 }
-#endif

@@ -14,8 +14,8 @@ namespace RevitExtensions
     {
         private delegate (bool success, object? result) ConverterDelegate(object value, Parameter parameter);
 
-        private static readonly Dictionary<(Type, Type), ConverterDelegate> _converters =
-            new Dictionary<(Type, Type), ConverterDelegate>();
+        private static readonly Dictionary<(Type, Type), List<ConverterDelegate>> _converters =
+            new Dictionary<(Type, Type), List<ConverterDelegate>>();
 
         static CustomConverter()
         {
@@ -42,7 +42,13 @@ namespace RevitExtensions
                     return (true, (object?)res);
                 return (false, null);
             };
-            _converters[(typeof(TFrom), typeof(TTo))] = del;
+            var key = (typeof(TFrom), typeof(TTo));
+            if (!_converters.TryGetValue(key, out var list))
+            {
+                list = new List<ConverterDelegate>();
+                _converters[key] = list;
+            }
+            list.Add(del);
         }
 
         internal static bool TryConvert(object value, Type targetType, Parameter parameter, out object? result)
@@ -61,11 +67,17 @@ namespace RevitExtensions
                 return true;
             }
 
-            if (_converters.TryGetValue((sourceType, targetType), out var del))
+            if (_converters.TryGetValue((sourceType, targetType), out var list))
             {
-                var (success, res) = del(value, parameter);
-                result = res;
-                return success;
+                foreach (var del in list)
+                {
+                    var (success, res) = del(value, parameter);
+                    if (success)
+                    {
+                        result = res;
+                        return true;
+                    }
+                }
             }
 
             try
@@ -129,9 +141,8 @@ namespace RevitExtensions
         {
             public bool TryConvert(string value, Parameter parameter, out double result)
             {
-                double scale = parameter.Element?.Document?.GetLengthUnitScale() ?? 1.0;
                 if (value.StartsWith("="))
-                    return UnitExpressionEvaluator.TryEvaluate(value, scale, out result);
+                    return UnitExpressionEvaluator.TryEvaluate(value, parameter, out result);
                 return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
             }
         }
@@ -140,10 +151,9 @@ namespace RevitExtensions
         {
             public bool TryConvert(string value, Parameter parameter, out int result)
             {
-                double scale = parameter.Element?.Document?.GetLengthUnitScale() ?? 1.0;
                 if (value.StartsWith("="))
                 {
-                    if (UnitExpressionEvaluator.TryEvaluate(value, scale, out var d))
+                    if (UnitExpressionEvaluator.TryEvaluate(value, parameter, out var d))
                     {
                         result = (int)Math.Round(d);
                         return true;
