@@ -47,7 +47,7 @@ namespace Autodesk.Revit.DB
         public ElementId Id { get; }
         public Document Document { get; }
         public ElementId TypeId { get; set; }
-        public ParameterSet Parameters { get; } = new ParameterSet();
+        public ParameterSet Parameters { get; }
 
         /// <summary>
         /// Gets a value indicating whether <see cref="Dispose"/> has been called.
@@ -61,6 +61,7 @@ namespace Autodesk.Revit.DB
         {
             Document = document;
             Id = id;
+            Parameters = new ParameterSet(this);
         }
 
         public ElementId GetTypeId() => TypeId;
@@ -430,12 +431,48 @@ namespace Autodesk.Revit.DB
         ElementId,
     }
 
+#if REVIT2022_OR_LESS
+    /// <summary>
+    /// Simplified list of parameter data types used in older Revit versions.
+    /// Only members required by tests are included.
+    /// </summary>
+    public enum ParameterType
+    {
+        Text,
+        MultilineText,
+        URL,
+        Integer,
+        YesNo,
+        Material,
+        Number,
+        FixtureUnit,
+        Length,
+        Area,
+        Volume,
+        Angle,
+        HVACDensity,
+        HVACPower,
+        HVACTemperature,
+        HVACAirflow,
+        ElectricalCurrent,
+        ElectricalPower,
+        Custom
+    }
+#endif
+
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.Definition.
     /// </summary>
     public class Definition
     {
         public string Name { get; set; }
+#if REVIT2022_OR_LESS
+        public ParameterType ParameterType { get; set; }
+#else
+        public ForgeTypeId DataType { get; set; } = new ForgeTypeId(string.Empty);
+
+        public ForgeTypeId GetDataType() => DataType;
+#endif
     }
 
     public class Parameter : IDisposable
@@ -446,6 +483,7 @@ namespace Autodesk.Revit.DB
         public Guid? GUID => Guid;
         public string Name { get; }
         public Definition Definition { get; }
+        public Element Element { get; internal set; }
         public bool IsDisposed { get; private set; }
         public StorageType StorageType { get; set; }
         public bool IsReadOnly { get; set; }
@@ -539,6 +577,31 @@ namespace Autodesk.Revit.DB
 
     public class ParameterSet : System.Collections.Generic.List<Parameter>
     {
+        private readonly Element? _owner;
+
+        internal ParameterSet() { }
+
+        internal ParameterSet(Element owner)
+        {
+            _owner = owner;
+        }
+
+        public new void Add(Parameter item)
+        {
+            if (_owner != null && item != null)
+                item.Element = _owner;
+            base.Add(item);
+        }
+
+        public new void AddRange(System.Collections.Generic.IEnumerable<Parameter> collection)
+        {
+            if (_owner != null)
+            {
+                foreach (var p in collection)
+                    if (p != null) p.Element = _owner;
+            }
+            base.AddRange(collection);
+        }
     }
 
     /// <summary>

@@ -141,7 +141,9 @@ The library exposes helpers for common Revit API patterns.
 - `GetParameter` and `LookupParameter` – search for a parameter on an element or
   its type using a flexible `ParameterIdentifier` or name.
 - `GetParameterValue` and `SetParameterValue` – read and write parameter values
-  with automatic type conversion.
+  with automatic type conversion. When setting numeric parameters a string
+  starting with `=` is evaluated as an arithmetic expression that may include
+  length units like `m` or `cm`.
 - Generic overloads of `GetParameterValue` and `LookupParameterValue` return the
   requested type directly.
 - `TrySetParameterValue` methods expose failure reasons without throwing

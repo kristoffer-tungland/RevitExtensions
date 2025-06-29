@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Autodesk.Revit.DB;
+using RevitExtensions.Utilities;
 
 namespace RevitExtensions
 {
@@ -74,6 +75,16 @@ namespace RevitExtensions
             }
         }
 
+        public static bool TryToDouble(object value, double unitScale, out double result)
+        {
+            if (value is string sv && sv.StartsWith("="))
+            {
+                return UnitExpressionEvaluator.TryEvaluate(sv, unitScale, out result);
+            }
+
+            return TryToDouble(value, out result);
+        }
+
         public static bool TryToInt32(object value, out int result)
         {
             result = default;
@@ -98,6 +109,22 @@ namespace RevitExtensions
                     }
                     return false;
             }
+        }
+
+        public static bool TryToInt32(object value, double unitScale, out int result)
+        {
+            if (value is string sv && sv.StartsWith("="))
+            {
+                if (UnitExpressionEvaluator.TryEvaluate(sv, unitScale, out var d))
+                {
+                    result = (int)Math.Round(d);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            return TryToInt32(value, out result);
         }
 
         public static bool TryToElementId(object value, out ElementId? id)

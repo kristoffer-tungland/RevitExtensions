@@ -2,6 +2,7 @@ using System;
 using Autodesk.Revit.DB;
 using System.Globalization;
 using RevitExtensions.Models;
+using RevitExtensions.Utilities;
 
 namespace RevitExtensions
 {
@@ -323,7 +324,9 @@ namespace RevitExtensions
         /// Sets the value of the parameter.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
-        /// <param name="value">The value to set.</param>
+        /// <param name="value">The value to set. Strings starting with '=' are
+        /// evaluated as arithmetic expressions supporting m, cm, mm, ft and in
+        /// units.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when setting the value fails.</exception>
         public static void SetParameterValue(this Parameter parameter, object value)
@@ -336,7 +339,9 @@ namespace RevitExtensions
         /// Sets the value of the parameter.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
-        /// <param name="value">The value to set.</param>
+        /// <param name="value">The value to set. Strings starting with '=' are
+        /// evaluated as arithmetic expressions supporting m, cm, mm, ft and in
+        /// units.</param>
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
@@ -357,7 +362,9 @@ namespace RevitExtensions
             {
                 case StorageType.Double:
                     double d;
-                    if (!CustomConvert.TryToDouble(value, out d))
+                    var doc = parameter.Element?.Document;
+                    var dScale = doc != null ? doc.GetLengthUnitScale() : 1.0;
+                    if (!CustomConvert.TryToDouble(value, dScale, out d))
                     {
                         reason = "Value must be a number.";
                         return false;
@@ -368,7 +375,9 @@ namespace RevitExtensions
                     break;
                 case StorageType.Integer:
                     int i;
-                    if (!CustomConvert.TryToInt32(value, out i))
+                    doc = parameter.Element?.Document;
+                    var iScale = doc != null ? doc.GetLengthUnitScale() : 1.0;
+                    if (!CustomConvert.TryToInt32(value, iScale, out i))
                     {
                         reason = "Value must be an integer.";
                         return false;
@@ -549,5 +558,6 @@ namespace RevitExtensions
             }
             return null;
         }
+
     }
 }
