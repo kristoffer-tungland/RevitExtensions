@@ -159,7 +159,7 @@ namespace RevitExtensions
 
             var target = typeof(T);
 
-            return (T)CustomConvert.ChangeType(value, target);
+            return (T)CustomConverter.ChangeType(value, target);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace RevitExtensions
 
             var target = typeof(T);
 
-            return (T)CustomConvert.ChangeType(value, target);
+            return (T)CustomConverter.ChangeType(value, target);
         }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace RevitExtensions
 
             var target = typeof(T);
 
-            return (T)CustomConvert.ChangeType(value, target);
+            return (T)CustomConverter.ChangeType(value, target);
         }
 
         /// <summary>
@@ -305,7 +305,7 @@ namespace RevitExtensions
 
             var target = typeof(T);
 
-            return (T)CustomConvert.ChangeType(value, target);
+            return (T)CustomConverter.ChangeType(value, target);
         }
 
         public static T LookupParameterValue<T>(this Element element, ParameterIdentifier identifier)
@@ -317,7 +317,7 @@ namespace RevitExtensions
 
             var target = typeof(T);
 
-            return (T)CustomConvert.ChangeType(value, target);
+            return (T)CustomConverter.ChangeType(value, target);
         }
 
         /// <summary>
@@ -362,9 +362,7 @@ namespace RevitExtensions
             {
                 case StorageType.Double:
                     double d;
-                    var doc = parameter.Element?.Document;
-                    var dScale = doc != null ? doc.GetLengthUnitScale() : 1.0;
-                    if (!CustomConvert.TryToDouble(value, dScale, out d))
+                    if (!CustomConverter.TryConvert(value, parameter, out d))
                     {
                         reason = "Value must be a number.";
                         return false;
@@ -375,9 +373,7 @@ namespace RevitExtensions
                     break;
                 case StorageType.Integer:
                     int i;
-                    doc = parameter.Element?.Document;
-                    var iScale = doc != null ? doc.GetLengthUnitScale() : 1.0;
-                    if (!CustomConvert.TryToInt32(value, iScale, out i))
+                    if (!CustomConverter.TryConvert(value, parameter, out i))
                     {
                         reason = "Value must be an integer.";
                         return false;
@@ -387,14 +383,14 @@ namespace RevitExtensions
                     result = parameter.Set(i);
                     break;
                 case StorageType.String:
-                    string str = CustomConvert.ToString(value);
+                    string str = CustomConverter.ToString(value);
 
                     if (string.Equals(parameter.AsString(), str)) return true;
                     result = parameter.Set(str);
                     break;
                 case StorageType.ElementId:
                     ElementId id;
-                    if (!CustomConvert.TryToElementId(value, out id))
+                    if (!CustomConverter.TryConvert(value, parameter, out id))
                     {
                         reason = "Value must be an ElementId.";
                         return false;
