@@ -153,13 +153,23 @@ namespace RevitExtensions
         public static T GetParameterValue<T>(this Parameter parameter)
         {
             var value = parameter.GetParameterValue();
-            if (value == null) return default;
+            if (value == null)
+                return default;
 
-            if (value is T t) return t;
+            if (value is T t)
+                return t;
 
-            var target = typeof(T);
+            if (CustomConverter.TryConvert(value, parameter, out T result))
+                return result;
 
-            return (T)CustomConverter.ChangeType(value, target);
+            try
+            {
+                return (T)System.Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return default!;
+            }
         }
 
         /// <summary>
@@ -203,14 +213,8 @@ namespace RevitExtensions
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static T GetParameterValue<T>(this Element element, string identifier)
         {
-            var value = element.GetParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConverter.ChangeType(value, target);
+            using var parameter = element.GetParameter(ParameterIdentifier.Parse(identifier));
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
@@ -223,14 +227,8 @@ namespace RevitExtensions
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static T GetParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
-            var value = element.GetParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConverter.ChangeType(value, target);
+            using var parameter = element.GetParameter(identifier);
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
@@ -298,26 +296,14 @@ namespace RevitExtensions
 
         public static T LookupParameterValue<T>(this Element element, string identifier)
         {
-            var value = element.LookupParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConverter.ChangeType(value, target);
+            using var parameter = element.LookupParameter(ParameterIdentifier.Parse(identifier));
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         public static T LookupParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
-            var value = element.LookupParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConverter.ChangeType(value, target);
+            using var parameter = element.LookupParameter(identifier);
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
@@ -383,7 +369,9 @@ namespace RevitExtensions
                     result = parameter.Set(i);
                     break;
                 case StorageType.String:
-                    string str = CustomConverter.ToString(value);
+                    string str;
+                    if (!CustomConverter.TryConvert(value, parameter, out str))
+                        str = CustomConverter.ToInvariantString(value);
 
                     if (string.Equals(parameter.AsString(), str)) return true;
                     result = parameter.Set(str);

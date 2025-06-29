@@ -6,7 +6,7 @@ namespace RevitExtensions.Utilities
     /// Converts a value from <typeparamref name="TFrom"/> to <typeparamref name="TTo"/>
     /// in the context of a parameter.
     /// </summary>
-    internal interface IParameterConverter<TFrom, TTo>
+    public interface IParameterConverter<TFrom, TTo>
     {
         /// <summary>
         /// Attempts to convert the specified value.

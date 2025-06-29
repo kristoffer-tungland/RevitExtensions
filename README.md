@@ -143,7 +143,8 @@ The library exposes helpers for common Revit API patterns.
 - `GetParameterValue` and `SetParameterValue` – read and write parameter values
   with automatic type conversion. When setting numeric parameters a string
   starting with `=` is evaluated as an arithmetic expression that may include
-  length units like `m` or `cm`.
+  length units like `m` or `cm`. Custom conversions can be registered via
+  `CustomConverter.Register`.
 - Generic overloads of `GetParameterValue` and `LookupParameterValue` return the
   requested type directly.
 - `TrySetParameterValue` methods expose failure reasons without throwing

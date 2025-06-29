@@ -7,155 +7,143 @@ using RevitExtensions.Utilities;
 namespace RevitExtensions
 {
     /// <summary>
-    /// Provides helper conversions for parameter values using registered converters.
+    /// Provides parameter-aware conversions between specific types.
+    /// Custom converters can be registered by library consumers.
     /// </summary>
-    internal static class CustomConverter
+    public static class CustomConverter
     {
-        private static readonly Dictionary<(Type, Type), object> _converters =
-            new Dictionary<(Type, Type), object>();
+        private delegate (bool success, object? result) ConverterDelegate(object value, Parameter parameter);
+
+        private static readonly Dictionary<(Type, Type), ConverterDelegate> _converters =
+            new Dictionary<(Type, Type), ConverterDelegate>();
 
         static CustomConverter()
         {
-            Register(new ObjectToDoubleConverter());
-            Register(new ObjectToIntConverter());
-            Register(new ObjectToElementIdConverter());
-            Register(new ObjectToStringConverter());
+            Register(new StringToDoubleConverter());
+            Register(new StringToIntConverter());
+            Register(new BoolToIntConverter());
+            Register(new IntToBoolConverter());
+            Register(new DateTimeToStringConverter());
+            Register(new IntToDateTimeConverter());
+            Register(new IntToElementIdConverter());
+            Register(new LongToElementIdConverter());
+            Register(new StringToElementIdConverter());
+            Register(new ElementIdToLongConverter());
         }
 
+        /// <summary>
+        /// Registers a new converter used when changing parameter values.
+        /// </summary>
         public static void Register<TFrom, TTo>(IParameterConverter<TFrom, TTo> converter)
         {
-            _converters[(typeof(TFrom), typeof(TTo))] = converter;
+            ConverterDelegate del = (obj, param) =>
+            {
+                if (obj is TFrom from && converter.TryConvert(from, param, out var res))
+                    return (true, (object?)res);
+                return (false, null);
+            };
+            _converters[(typeof(TFrom), typeof(TTo))] = del;
         }
 
+        internal static bool TryConvert(object value, Type targetType, Parameter parameter, out object? result)
+        {
+            if (value == null)
+            {
+                result = null;
+                return !targetType.IsValueType || Nullable.GetUnderlyingType(targetType) != null;
+            }
+
+            var sourceType = value.GetType();
+
+            if (targetType.IsAssignableFrom(sourceType))
+            {
+                result = value;
+                return true;
+            }
+
+            if (_converters.TryGetValue((sourceType, targetType), out var del))
+            {
+                var (success, res) = del(value, parameter);
+                result = res;
+                return success;
+            }
+
+            try
+            {
+                result = System.Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to convert the specified value.
+        /// </summary>
         public static bool TryConvert<TFrom, TTo>(TFrom value, Parameter parameter, out TTo result)
         {
-            if (_converters.TryGetValue((typeof(TFrom), typeof(TTo)), out var convObj))
+            if (TryConvert((object?)value!, typeof(TTo), parameter, out var obj) && obj is TTo t)
             {
-                return ((IParameterConverter<TFrom, TTo>)convObj).TryConvert(value, parameter, out result);
+                result = t;
+                return true;
             }
 
             result = default!;
             return false;
         }
 
+        /// <summary>
+        /// Attempts to convert the specified value.
+        /// </summary>
         public static bool TryConvert<TTo>(object value, Parameter parameter, out TTo result)
         {
-            if (value is TTo direct)
+            if (TryConvert(value, typeof(TTo), parameter, out var obj) && obj is TTo t)
             {
-                result = direct;
+                result = t;
                 return true;
             }
 
-            if (_converters.TryGetValue((typeof(object), typeof(TTo)), out var convObj))
-            {
-                return ((IParameterConverter<object, TTo>)convObj).TryConvert(value, parameter, out result);
-            }
-
-            try
-            {
-                result = (TTo)Convert.ChangeType(value, typeof(TTo), CultureInfo.InvariantCulture);
-                return true;
-            }
-            catch
-            {
-                result = default!;
-                return false;
-            }
+            result = default!;
+            return false;
         }
 
-        public static object? ChangeType(object value, Type targetType)
-        {
-            if (value == null) return null;
-            if (targetType.IsInstanceOfType(value)) return value;
-
-            if (targetType == typeof(bool) || targetType == typeof(bool?))
-                return ToBoolean(value);
-
-            if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
-                return ToDateTime(value);
-
-            return Convert.ChangeType(value, Nullable.GetUnderlyingType(targetType) ?? targetType, CultureInfo.InvariantCulture);
-        }
-
-        public static bool ToBoolean(object value)
-        {
-            return value switch
-            {
-                bool b => b,
-                int i => i != 0,
-                long l => l != 0,
-                string s => bool.Parse(s),
-                _ => Convert.ToBoolean(value)
-            };
-        }
-
-        public static DateTime ToDateTime(object value)
-        {
-            return value switch
-            {
-                DateTime dt => dt,
-                int i => DateTimeOffset.FromUnixTimeSeconds(i).UtcDateTime,
-                long l => DateTimeOffset.FromUnixTimeSeconds(l).UtcDateTime,
-                double d => DateTime.FromOADate(d),
-                string s => DateTime.Parse(s, null, DateTimeStyles.RoundtripKind),
-                _ => (DateTime)Convert.ChangeType(value, typeof(DateTime), CultureInfo.InvariantCulture)
-            };
-        }
-
-        public static string? ToString(object value)
+        /// <summary>
+        /// Converts a value to an invariant string representation.
+        /// </summary>
+        internal static string ToInvariantString(object value)
         {
             return value switch
             {
                 DateTime dt => dt.ToString("o"),
-                ElementId eid => eid.GetElementIdValue().ToString(),
-                _ => value?.ToString()
+                ElementId eid => eid.GetElementIdValue().ToString(CultureInfo.InvariantCulture),
+                IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
+                _ => value?.ToString() ?? string.Empty
             };
         }
 
         // Converter implementations
-        private class ObjectToDoubleConverter : IParameterConverter<object, double>
+        private class StringToDoubleConverter : IParameterConverter<string, double>
         {
-            public bool TryConvert(object value, Parameter parameter, out double result)
+            public bool TryConvert(string value, Parameter parameter, out double result)
             {
                 double scale = parameter.Element?.Document?.GetLengthUnitScale() ?? 1.0;
-
-                if (value is string sv && sv.StartsWith("="))
-                    return UnitExpressionEvaluator.TryEvaluate(sv, scale, out result);
-
-                switch (value)
-                {
-                    case double d:
-                        result = d; return true;
-                    case bool b:
-                        result = b ? 1 : 0; return true;
-                    case DateTime dt:
-                        result = dt.ToOADate(); return true;
-                    case string s:
-                        if (double.TryParse(s, out result)) return true;
-                        if (bool.TryParse(s, out var sb)) { result = sb ? 1 : 0; return true; }
-                        if (DateTime.TryParse(s, null, DateTimeStyles.RoundtripKind, out var sd)) { result = sd.ToOADate(); return true; }
-                        break;
-                    default:
-                        if (value is IConvertible conv)
-                        {
-                            try { result = Convert.ToDouble(conv, CultureInfo.InvariantCulture); return true; } catch { }
-                        }
-                        break;
-                }
-                result = default;
-                return false;
+                if (value.StartsWith("="))
+                    return UnitExpressionEvaluator.TryEvaluate(value, scale, out result);
+                return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
             }
         }
 
-        private class ObjectToIntConverter : IParameterConverter<object, int>
+        private class StringToIntConverter : IParameterConverter<string, int>
         {
-            public bool TryConvert(object value, Parameter parameter, out int result)
+            public bool TryConvert(string value, Parameter parameter, out int result)
             {
                 double scale = parameter.Element?.Document?.GetLengthUnitScale() ?? 1.0;
-
-                if (value is string sv && sv.StartsWith("="))
+                if (value.StartsWith("="))
                 {
-                    if (UnitExpressionEvaluator.TryEvaluate(sv, scale, out var d))
+                    if (UnitExpressionEvaluator.TryEvaluate(value, scale, out var d))
                     {
                         result = (int)Math.Round(d);
                         return true;
@@ -163,59 +151,84 @@ namespace RevitExtensions
                     result = default;
                     return false;
                 }
+                return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
+            }
+        }
 
-                switch (value)
+        private class BoolToIntConverter : IParameterConverter<bool, int>
+        {
+            public bool TryConvert(bool value, Parameter parameter, out int result)
+            {
+                result = value ? 1 : 0;
+                return true;
+            }
+        }
+
+        private class IntToBoolConverter : IParameterConverter<int, bool>
+        {
+            public bool TryConvert(int value, Parameter parameter, out bool result)
+            {
+                result = value != 0;
+                return true;
+            }
+        }
+
+        private class DateTimeToStringConverter : IParameterConverter<DateTime, string>
+        {
+            public bool TryConvert(DateTime value, Parameter parameter, out string result)
+            {
+                result = value.ToString("o");
+                return true;
+            }
+        }
+
+        private class IntToDateTimeConverter : IParameterConverter<int, DateTime>
+        {
+            public bool TryConvert(int value, Parameter parameter, out DateTime result)
+            {
+                result = DateTimeOffset.FromUnixTimeSeconds(value).UtcDateTime;
+                return true;
+            }
+        }
+
+        private class IntToElementIdConverter : IParameterConverter<int, ElementId>
+        {
+            public bool TryConvert(int value, Parameter parameter, out ElementId result)
+            {
+                result = new ElementId(value);
+                return true;
+            }
+        }
+
+        private class LongToElementIdConverter : IParameterConverter<long, ElementId>
+        {
+            public bool TryConvert(long value, Parameter parameter, out ElementId result)
+            {
+                result = new ElementId((int)value);
+                return true;
+            }
+        }
+
+        private class StringToElementIdConverter : IParameterConverter<string, ElementId>
+        {
+            public bool TryConvert(string value, Parameter parameter, out ElementId result)
+            {
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i))
                 {
-                    case int i:
-                        result = i; return true;
-                    case bool b:
-                        result = b ? 1 : 0; return true;
-                    case DateTime dt:
-                        result = (int)new DateTimeOffset(dt).ToUnixTimeSeconds(); return true;
-                    case string s:
-                        if (int.TryParse(s, out result)) return true;
-                        if (bool.TryParse(s, out var sb)) { result = sb ? 1 : 0; return true; }
-                        if (DateTime.TryParse(s, null, DateTimeStyles.RoundtripKind, out var sd)) { result = (int)new DateTimeOffset(sd).ToUnixTimeSeconds(); return true; }
-                        break;
-                    default:
-                        if (value is IConvertible conv)
-                        {
-                            try { result = Convert.ToInt32(conv, CultureInfo.InvariantCulture); return true; } catch { }
-                        }
-                        break;
+                    result = new ElementId(i);
+                    return true;
                 }
-                result = default;
+                result = null!;
                 return false;
             }
         }
 
-        private class ObjectToElementIdConverter : IParameterConverter<object, ElementId>
+        private class ElementIdToLongConverter : IParameterConverter<ElementId, long>
         {
-            public bool TryConvert(object value, Parameter parameter, out ElementId result)
+            public bool TryConvert(ElementId value, Parameter parameter, out long result)
             {
-                switch (value)
-                {
-                    case ElementId e:
-                        result = e; return true;
-                    case int i:
-                        result = new ElementId(i); return true;
-                    case long l:
-                        result = new ElementId((int)l); return true;
-                    case string s when int.TryParse(s, out var vi):
-                        result = new ElementId(vi); return true;
-                    default:
-                        result = null;
-                        return false;
-                }
-            }
-        }
-
-        private class ObjectToStringConverter : IParameterConverter<object, string>
-        {
-            public bool TryConvert(object value, Parameter parameter, out string result)
-            {
-                result = CustomConverter.ToString(value);
-                return result != null;
+                result = value.GetElementIdValue();
+                return true;
             }
         }
     }
