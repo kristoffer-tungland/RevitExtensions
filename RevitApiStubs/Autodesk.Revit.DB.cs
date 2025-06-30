@@ -113,6 +113,25 @@ namespace Autodesk.Revit.DB
                 _ => value
             };
         }
+
+        public static double ConvertFromInternalUnits(double value, DisplayUnitType units)
+        {
+            return units switch
+            {
+                DisplayUnitType.Feet => value,
+                DisplayUnitType.Inches => value * 12.0,
+                DisplayUnitType.Meters => value / 3.28083989501312,
+                DisplayUnitType.DUT_CENTIMETERS => value / 0.0328083989501312,
+                DisplayUnitType.DUT_MILLIMETERS => value / 0.00328083989501312,
+                _ => value
+            };
+        }
+
+        public static double Convert(double value, DisplayUnitType current, DisplayUnitType desired)
+        {
+            var internalValue = ConvertToInternalUnits(value, current);
+            return ConvertFromInternalUnits(internalValue, desired);
+        }
 #else
         public static double ConvertToInternalUnits(double value, ForgeTypeId unitTypeId)
         {
@@ -122,6 +141,22 @@ namespace Autodesk.Revit.DB
             if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Centimeters) return value * 0.0328083989501312;
             if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Millimeters) return value * 0.00328083989501312;
             return value;
+        }
+
+        public static double ConvertFromInternalUnits(double value, ForgeTypeId unitTypeId)
+        {
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Feet) return value;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Inches) return value * 12.0;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Meters) return value / 3.28083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Centimeters) return value / 0.0328083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Millimeters) return value / 0.00328083989501312;
+            return value;
+        }
+
+        public static double Convert(double value, ForgeTypeId currentUnitTypeId, ForgeTypeId desiredUnitTypeId)
+        {
+            var internalValue = ConvertToInternalUnits(value, currentUnitTypeId);
+            return ConvertFromInternalUnits(internalValue, desiredUnitTypeId);
         }
 #endif
     }

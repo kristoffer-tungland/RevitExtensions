@@ -54,5 +54,45 @@ namespace RevitExtensions
             return UnitUtils.ConvertToInternalUnits(value, unitId);
 #endif
         }
+
+        /// <summary>
+        /// Converts a value between two unit identifiers.
+        /// </summary>
+        public static double Convert(this double value, ForgeTypeId currentUnitTypeId, ForgeTypeId desiredUnitTypeId)
+        {
+#if REVIT2021_OR_LESS
+            return UnitUtils.Convert(value, currentUnitTypeId.ToDisplayUnitType(), desiredUnitTypeId.ToDisplayUnitType());
+#else
+            return UnitUtils.Convert(value, currentUnitTypeId, desiredUnitTypeId);
+#endif
+        }
+
+        /// <summary>
+        /// Converts an integer value between two unit identifiers.
+        /// </summary>
+        public static double Convert(this int value, ForgeTypeId currentUnitTypeId, ForgeTypeId desiredUnitTypeId)
+        {
+            return ((double)value).Convert(currentUnitTypeId, desiredUnitTypeId);
+        }
+
+        /// <summary>
+        /// Converts a value from internal units to the specified unit identifier.
+        /// </summary>
+        public static double ConvertFromInternalUnits(this double value, ForgeTypeId unitTypeId)
+        {
+#if REVIT2021_OR_LESS
+            return UnitUtils.ConvertFromInternalUnits(value, unitTypeId.ToDisplayUnitType());
+#else
+            return UnitUtils.ConvertFromInternalUnits(value, unitTypeId);
+#endif
+        }
+
+        /// <summary>
+        /// Converts an integer value from internal units to the specified unit identifier.
+        /// </summary>
+        public static double ConvertFromInternalUnits(this int value, ForgeTypeId unitTypeId)
+        {
+            return ((double)value).ConvertFromInternalUnits(unitTypeId);
+        }
     }
 }

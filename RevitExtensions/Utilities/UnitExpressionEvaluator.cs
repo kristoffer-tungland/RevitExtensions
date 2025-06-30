@@ -28,16 +28,17 @@ namespace RevitExtensions.Utilities
             if (expr.StartsWith("="))
                 expr = expr.Substring(1);
 
-            double defaultScale = 1.0;
             var doc = parameter?.Element?.Document;
+            ForgeTypeId displayUnitId;
 #if REVIT2021_OR_LESS
             if (doc != null)
             {
-                var ut = parameter.Definition.ParameterType == ParameterType.Length
-                    ? UnitType.UT_Length
-                    : UnitType.UT_Length;
-                var fo = doc.GetUnits().GetFormatOptions(ut);
-                defaultScale = UnitUtils.ConvertToInternalUnits(1, fo.DisplayUnits);
+                var fo = doc.GetUnits().GetFormatOptions(UnitType.UT_Length);
+                displayUnitId = fo.DisplayUnits.ToForgeTypeId();
+            }
+            else
+            {
+                displayUnitId = new ForgeTypeId("unit:feet");
             }
 #else
             if (doc != null)
@@ -46,7 +47,11 @@ namespace RevitExtensions.Utilities
                 if (spec == null || spec.Empty())
                     spec = SpecTypeId.Length;
                 var fo = doc.GetUnits().GetFormatOptions(spec);
-                defaultScale = UnitUtils.ConvertToInternalUnits(1, fo.GetUnitTypeId());
+                displayUnitId = fo.GetUnitTypeId();
+            }
+            else
+            {
+                displayUnitId = UnitTypeId.Feet;
             }
 #endif
 
@@ -54,23 +59,19 @@ namespace RevitExtensions.Utilities
             {
                 var number = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 var unit = m.Groups[2].Value.ToLowerInvariant();
-                double scaled;
                 if (UnitIdUtils.TryParseLengthUnit(unit, out var id))
                 {
-                    scaled = number.ToInternalUnits(id);
+                    number = number.Convert(id, displayUnitId);
                 }
-                else
-                {
-                    scaled = number * defaultScale;
-                }
-                return scaled.ToString(CultureInfo.InvariantCulture);
+                return number.ToString(CultureInfo.InvariantCulture);
             });
 
             try
             {
                 using var table = new DataTable { Locale = CultureInfo.InvariantCulture };
                 var resultObj = table.Compute(expr, null);
-                value = Convert.ToDouble(resultObj, CultureInfo.InvariantCulture);
+                var displayResult = Convert.ToDouble(resultObj, CultureInfo.InvariantCulture);
+                value = displayResult.ToInternalUnits(displayUnitId);
                 return true;
             }
             catch
