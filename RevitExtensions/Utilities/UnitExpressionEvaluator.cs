@@ -3,6 +3,7 @@ using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Autodesk.Revit.DB;
+using RevitExtensions;
 
 namespace RevitExtensions.Utilities
 {
@@ -13,10 +14,6 @@ namespace RevitExtensions.Utilities
     /// </summary>
     internal static class UnitExpressionEvaluator
     {
-        private const double FeetPerMeter = 3.28083989501312;
-        private const double FeetPerCentimeter = 0.0328083989501312;
-        private const double FeetPerMillimeter = 0.00328083989501312;
-
         private static readonly Regex TokenRegex =
             new Regex(@"(-?\d+(?:\.\d+)?)(?:\s*(m|cm|mm|ft|in))?",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -57,27 +54,15 @@ namespace RevitExtensions.Utilities
             {
                 var number = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 var unit = m.Groups[2].Value.ToLowerInvariant();
-#if REVIT2021_OR_LESS
-                double scaled = unit switch
+                double scaled;
+                if (UnitIdUtils.TryParseLengthUnit(unit, out var id))
                 {
-                    "m" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_METERS),
-                    "cm" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_CENTIMETERS),
-                    "mm" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_MILLIMETERS),
-                    "ft" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_DECIMAL_FEET),
-                    "in" => UnitUtils.ConvertToInternalUnits(number, DisplayUnitType.DUT_DECIMAL_INCHES),
-                    _ => number * defaultScale
-                };
-#else
-                double scaled = unit switch
+                    scaled = number.ToInternalUnits(id);
+                }
+                else
                 {
-                    "m" => UnitUtils.ConvertToInternalUnits(number, UnitTypeId.Meters),
-                    "cm" => UnitUtils.ConvertToInternalUnits(number, UnitTypeId.Centimeters),
-                    "mm" => UnitUtils.ConvertToInternalUnits(number, UnitTypeId.Millimeters),
-                    "ft" => UnitUtils.ConvertToInternalUnits(number, UnitTypeId.Feet),
-                    "in" => UnitUtils.ConvertToInternalUnits(number, UnitTypeId.Inches),
-                    _ => number * defaultScale
-                };
-#endif
+                    scaled = number * defaultScale;
+                }
                 return scaled.ToString(CultureInfo.InvariantCulture);
             });
 

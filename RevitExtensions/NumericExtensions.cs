@@ -30,5 +30,29 @@ namespace RevitExtensions
             return new ElementId((int)value);
 #endif
         }
+
+        /// <summary>
+        /// Converts the value to Revit internal units using the specified unit identifier.
+        /// </summary>
+        public static double ToInternalUnits(this double value, ForgeTypeId unitId)
+        {
+#if REVIT2021_OR_LESS
+            return UnitUtils.ConvertToInternalUnits(value, unitId.ToDisplayUnitType());
+#else
+            return UnitUtils.ConvertToInternalUnits(value, unitId);
+#endif
+        }
+
+        /// <summary>
+        /// Converts the integer value to Revit internal units using the specified unit identifier.
+        /// </summary>
+        public static double ToInternalUnits(this int value, ForgeTypeId unitId)
+        {
+#if REVIT2021_OR_LESS
+            return UnitUtils.ConvertToInternalUnits(value, unitId.ToDisplayUnitType());
+#else
+            return UnitUtils.ConvertToInternalUnits(value, unitId);
+#endif
+        }
     }
 }
