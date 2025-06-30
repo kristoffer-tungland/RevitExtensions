@@ -176,6 +176,16 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void SetParameterValue_Expression_Evaluated()
+        {
+            var parameter = new Parameter("A") { StorageType = StorageType.Double };
+
+            parameter.SetParameterValue("=1m + 50cm");
+
+            Assert.InRange(parameter.AsDouble(), 4.92, 4.93);
+        }
+
+        [Fact]
         public void TrySetParameterValue_ReadOnly_ReturnsFalseWithReason()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.String, IsReadOnly = true };
@@ -205,6 +215,20 @@ namespace RevitExtensions.Tests
             element.SetParameterValue(ParameterIdentifier.Parse("10"), 5);
 
             Assert.Equal(5, parameter.AsInteger());
+        }
+
+        [Fact]
+        public void Element_SetParameterValue_Expression_UsesUnits()
+        {
+            var doc = new Document();
+            doc.SetTestLengthUnitScale(0.00328083989501312); // mm
+            var element = new Element(doc, new ElementId(1));
+            var parameter = new Parameter(new ElementId(11)) { StorageType = StorageType.Double };
+            element.Parameters.Add(parameter);
+
+            element.SetParameterValue(ParameterIdentifier.Parse("11"), "=10");
+
+            Assert.InRange(parameter.AsDouble(), 0.032, 0.033);
         }
 
         [Fact]
