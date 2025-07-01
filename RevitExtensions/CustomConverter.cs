@@ -143,7 +143,13 @@ namespace RevitExtensions
             {
                 if (value.StartsWith("="))
                     return UnitExpressionEvaluator.TryEvaluate(value, parameter, out result);
-                return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
+
+                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+                    return true;
+
+                // Attempt unit conversion using the expression evaluator when the
+                // string does not parse directly as a number.
+                return UnitExpressionEvaluator.TryEvaluate(value, parameter, out result);
             }
         }
 
@@ -161,7 +167,18 @@ namespace RevitExtensions
                     result = default;
                     return false;
                 }
-                return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
+
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
+                    return true;
+
+                // Attempt unit conversion if integer parse fails.
+                if (UnitExpressionEvaluator.TryEvaluate(value, parameter, out var dd))
+                {
+                    result = (int)Math.Round(dd);
+                    return true;
+                }
+
+                return false;
             }
         }
 
