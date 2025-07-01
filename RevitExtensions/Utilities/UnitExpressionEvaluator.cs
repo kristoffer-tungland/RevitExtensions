@@ -28,34 +28,20 @@ namespace RevitExtensions.Utilities
             if (expr.StartsWith("="))
                 expr = expr.Substring(1);
 
-            var doc = parameter?.Element?.Document;
-            ForgeTypeId displayUnitId;
+            var doc = parameter?.Element?.Document
+                ?? throw new InvalidOperationException("Parameter must belong to a document.");
 #if REVIT2021_OR_LESS
-            if (doc != null)
-            {
-                var spec = parameter.Definition.GetDataType();
-                if (spec == null || spec.Empty())
-                    spec = SpecTypeId.Number.Length;
-                var fo = doc.GetUnits().GetFormatOptions(spec.ToUnitType());
-                displayUnitId = fo.DisplayUnits.ToForgeTypeId();
-            }
-            else
-            {
-                displayUnitId = new ForgeTypeId("unit:feet");
-            }
+            var spec = parameter.Definition.GetDataType();
+            if (spec == null || spec.Empty())
+                spec = SpecTypeId.Number.Length;
+            var fo = doc.GetUnits().GetFormatOptions(spec.ToUnitType());
+            var displayUnitId = fo.DisplayUnits.ToForgeTypeId();
 #else
-            if (doc != null)
-            {
-                var spec = parameter.Definition.GetDataType();
-                if (spec == null || spec.Empty())
-                    spec = SpecTypeId.Length;
-                var fo = doc.GetUnits().GetFormatOptions(spec);
-                displayUnitId = fo.GetUnitTypeId();
-            }
-            else
-            {
-                displayUnitId = UnitTypeId.Feet;
-            }
+            var spec = parameter.Definition.GetDataType();
+            if (spec == null || spec.Empty())
+                spec = SpecTypeId.Length;
+            var fo = doc.GetUnits().GetFormatOptions(spec);
+            var displayUnitId = fo.GetUnitTypeId();
 #endif
 
             expr = TokenRegex.Replace(expr, m =>

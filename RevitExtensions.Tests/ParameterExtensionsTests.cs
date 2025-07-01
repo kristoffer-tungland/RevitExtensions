@@ -183,14 +183,17 @@ namespace RevitExtensions.Tests
         [Fact]
         public void SetParameterValue_Expression_Evaluated()
         {
+            var doc = new Document();
+            var element = new Element(doc, new ElementId(1));
             var parameter = new Parameter("A") { StorageType = StorageType.Double };
 #if REVIT2021_OR_LESS
             parameter.Definition.ParameterType = ParameterType.Length;
 #else
             parameter.Definition.DataType = SpecTypeId.Length;
 #endif
+            element.Parameters.Add(parameter);
 
-            parameter.SetParameterValue("=1m + 50cm");
+            element.SetParameterValue(ParameterIdentifier.Parse("A"), "=1m + 50cm");
 
             Assert.InRange(parameter.AsDouble(), 4.92, 4.93);
         }
