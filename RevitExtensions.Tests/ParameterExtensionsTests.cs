@@ -169,6 +169,11 @@ namespace RevitExtensions.Tests
         public void SetParameterValue_SetsValue()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
 
             parameter.SetParameterValue(3.5);
 
@@ -179,6 +184,11 @@ namespace RevitExtensions.Tests
         public void SetParameterValue_Expression_Evaluated()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
 
             parameter.SetParameterValue("=1m + 50cm");
 
@@ -224,6 +234,11 @@ namespace RevitExtensions.Tests
             doc.SetTestLengthUnitScale(0.00328083989501312); // mm
             var element = new Element(doc, new ElementId(1));
             var parameter = new Parameter(new ElementId(11)) { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
             element.Parameters.Add(parameter);
 
             element.SetParameterValue(ParameterIdentifier.Parse("11"), "=10");

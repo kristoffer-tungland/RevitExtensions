@@ -21,6 +21,17 @@ namespace RevitExtensions
             if (tid == "unit:feet") return DisplayUnitType.DUT_DECIMAL_FEET;
             return DisplayUnitType.DUT_DECIMAL_FEET;
         }
+
+        /// <summary>
+        /// Maps a specification identifier to the corresponding <see cref="UnitType"/>.
+        /// Currently only length is supported in the API stubs.
+        /// </summary>
+        public static UnitType ToUnitType(this ForgeTypeId id)
+        {
+            var tid = id.TypeId.ToLowerInvariant();
+            if (tid.Contains("length")) return UnitType.UT_Length;
+            return UnitType.UT_Length;
+        }
     }
 #endif
 }

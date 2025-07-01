@@ -33,7 +33,10 @@ namespace RevitExtensions.Utilities
 #if REVIT2021_OR_LESS
             if (doc != null)
             {
-                var fo = doc.GetUnits().GetFormatOptions(UnitType.UT_Length);
+                var spec = parameter.Definition.GetDataType();
+                if (spec == null || spec.Empty())
+                    spec = SpecTypeId.Number.Length;
+                var fo = doc.GetUnits().GetFormatOptions(spec.ToUnitType());
                 displayUnitId = fo.DisplayUnits.ToForgeTypeId();
             }
             else
