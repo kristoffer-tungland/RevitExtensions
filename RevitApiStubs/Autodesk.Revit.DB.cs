@@ -16,6 +16,7 @@ namespace Autodesk.Revit.DB
         public ElementId(int value) => IntegerValue = value;
 #endif
 
+
         public override bool Equals(object? obj)
         {
             if (obj is ElementId other)
@@ -39,6 +40,127 @@ namespace Autodesk.Revit.DB
         }
     }
 
+#if REVIT2021_OR_LESS
+    public enum UnitType
+    {
+        UT_Length
+    }
+
+    public enum DisplayUnitType
+    {
+        DUT_DECIMAL_FEET,
+        DUT_DECIMAL_INCHES,
+        DUT_METERS,
+        DUT_CENTIMETERS,
+        DUT_MILLIMETERS
+    }
+#else
+    public static class UnitTypeId
+    {
+        public static ForgeTypeId Feet { get; } = new ForgeTypeId("unit:feet");
+        public static ForgeTypeId Inches { get; } = new ForgeTypeId("unit:inch");
+        public static ForgeTypeId Meters { get; } = new ForgeTypeId("unit:meter");
+        public static ForgeTypeId Centimeters { get; } = new ForgeTypeId("unit:centimeter");
+        public static ForgeTypeId Millimeters { get; } = new ForgeTypeId("unit:millimeter");
+    }
+#endif
+
+    public class FormatOptions
+    {
+#if REVIT2021_OR_LESS
+        public DisplayUnitType DisplayUnits { get; set; } = DisplayUnitType.Feet;
+#else
+        public ForgeTypeId UnitTypeId { get; set; } = Autodesk.Revit.DB.UnitTypeId.Feet;
+        public ForgeTypeId GetUnitTypeId() => UnitTypeId;
+        public void SetUnitTypeId(ForgeTypeId id) => UnitTypeId = id;
+#endif
+    }
+
+    public class Units
+    {
+#if REVIT2021_OR_LESS
+        private readonly System.Collections.Generic.Dictionary<UnitType, FormatOptions> _map = new System.Collections.Generic.Dictionary<UnitType, FormatOptions>();
+        public FormatOptions GetFormatOptions(UnitType unitType)
+        {
+            _map.TryGetValue(unitType, out var fo);
+            return fo ?? new FormatOptions();
+        }
+        public void SetFormatOptions(UnitType unitType, FormatOptions options) => _map[unitType] = options;
+#else
+        private readonly System.Collections.Generic.Dictionary<ForgeTypeId, FormatOptions> _map = new System.Collections.Generic.Dictionary<ForgeTypeId, FormatOptions>();
+        public FormatOptions GetFormatOptions(ForgeTypeId spec)
+        {
+            _map.TryGetValue(spec, out var fo);
+            return fo ?? new FormatOptions();
+        }
+        public System.Collections.Generic.IEnumerable<ForgeTypeId> GetFormatOptionsSpecTypes() => _map.Keys;
+        public void SetFormatOptions(ForgeTypeId spec, FormatOptions options) => _map[spec] = options;
+#endif
+    }
+
+    public static class UnitUtils
+    {
+#if REVIT2021_OR_LESS
+        public static double ConvertToInternalUnits(double value, DisplayUnitType units)
+        {
+            return units switch
+            {
+                DisplayUnitType.Feet => value,
+                DisplayUnitType.Inches => value / 12.0,
+                DisplayUnitType.Meters => value * 3.28083989501312,
+                DisplayUnitType.DUT_CENTIMETERS => value * 0.0328083989501312,
+                DisplayUnitType.DUT_MILLIMETERS => value * 0.00328083989501312,
+                _ => value
+            };
+        }
+
+        public static double ConvertFromInternalUnits(double value, DisplayUnitType units)
+        {
+            return units switch
+            {
+                DisplayUnitType.Feet => value,
+                DisplayUnitType.Inches => value * 12.0,
+                DisplayUnitType.Meters => value / 3.28083989501312,
+                DisplayUnitType.DUT_CENTIMETERS => value / 0.0328083989501312,
+                DisplayUnitType.DUT_MILLIMETERS => value / 0.00328083989501312,
+                _ => value
+            };
+        }
+
+        public static double Convert(double value, DisplayUnitType current, DisplayUnitType desired)
+        {
+            var internalValue = ConvertToInternalUnits(value, current);
+            return ConvertFromInternalUnits(internalValue, desired);
+        }
+#else
+        public static double ConvertToInternalUnits(double value, ForgeTypeId unitTypeId)
+        {
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Feet) return value;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Inches) return value / 12.0;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Meters) return value * 3.28083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Centimeters) return value * 0.0328083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Millimeters) return value * 0.00328083989501312;
+            return value;
+        }
+
+        public static double ConvertFromInternalUnits(double value, ForgeTypeId unitTypeId)
+        {
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Feet) return value;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Inches) return value * 12.0;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Meters) return value / 3.28083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Centimeters) return value / 0.0328083989501312;
+            if (unitTypeId == Autodesk.Revit.DB.UnitTypeId.Millimeters) return value / 0.00328083989501312;
+            return value;
+        }
+
+        public static double Convert(double value, ForgeTypeId currentUnitTypeId, ForgeTypeId desiredUnitTypeId)
+        {
+            var internalValue = ConvertToInternalUnits(value, currentUnitTypeId);
+            return ConvertFromInternalUnits(internalValue, desiredUnitTypeId);
+        }
+#endif
+    }
+
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.Element exposing only the Id property.
     /// </summary>
@@ -47,7 +169,7 @@ namespace Autodesk.Revit.DB
         public ElementId Id { get; }
         public Document Document { get; }
         public ElementId TypeId { get; set; }
-        public ParameterSet Parameters { get; } = new ParameterSet();
+        public ParameterSet Parameters { get; }
 
         /// <summary>
         /// Gets a value indicating whether <see cref="Dispose"/> has been called.
@@ -61,6 +183,7 @@ namespace Autodesk.Revit.DB
         {
             Document = document;
             Id = id;
+            Parameters = new ParameterSet(this);
         }
 
         public ElementId GetTypeId() => TypeId;
@@ -148,6 +271,10 @@ namespace Autodesk.Revit.DB
         public BindingMap ParameterBindings { get; } = new BindingMap();
 
         public Settings Settings { get; } = new Settings();
+
+        public Units Units { get; } = new Units();
+
+        public Units GetUnits() => Units;
 
         public void SetElementOwner(ElementId id, string owner) => _owners[id] = owner;
 
@@ -430,12 +557,48 @@ namespace Autodesk.Revit.DB
         ElementId,
     }
 
+#if REVIT2021_OR_LESS
+    /// <summary>
+    /// Simplified list of parameter data types used in older Revit versions.
+    /// Only members required by tests are included.
+    /// </summary>
+    public enum ParameterType
+    {
+        Text,
+        MultilineText,
+        URL,
+        Integer,
+        YesNo,
+        Material,
+        Number,
+        FixtureUnit,
+        Length,
+        Area,
+        Volume,
+        Angle,
+        HVACDensity,
+        HVACPower,
+        HVACTemperature,
+        HVACAirflow,
+        ElectricalCurrent,
+        ElectricalPower,
+        Custom
+    }
+#endif
+
     /// <summary>
     /// Minimal stand-in for Autodesk.Revit.DB.Definition.
     /// </summary>
     public class Definition
     {
         public string Name { get; set; }
+#if REVIT2021_OR_LESS
+        public ParameterType ParameterType { get; set; }
+#else
+        public ForgeTypeId DataType { get; set; } = new ForgeTypeId(string.Empty);
+
+        public ForgeTypeId GetDataType() => DataType;
+#endif
     }
 
     public class Parameter : IDisposable
@@ -446,6 +609,7 @@ namespace Autodesk.Revit.DB
         public Guid? GUID => Guid;
         public string Name { get; }
         public Definition Definition { get; }
+        public Element Element { get; internal set; }
         public bool IsDisposed { get; private set; }
         public StorageType StorageType { get; set; }
         public bool IsReadOnly { get; set; }
@@ -539,6 +703,31 @@ namespace Autodesk.Revit.DB
 
     public class ParameterSet : System.Collections.Generic.List<Parameter>
     {
+        private readonly Element? _owner;
+
+        internal ParameterSet() { }
+
+        internal ParameterSet(Element owner)
+        {
+            _owner = owner;
+        }
+
+        public new void Add(Parameter item)
+        {
+            if (_owner != null && item != null)
+                item.Element = _owner;
+            base.Add(item);
+        }
+
+        public new void AddRange(System.Collections.Generic.IEnumerable<Parameter> collection)
+        {
+            if (_owner != null)
+            {
+                foreach (var p in collection)
+                    if (p != null) p.Element = _owner;
+            }
+            base.AddRange(collection);
+        }
     }
 
     /// <summary>

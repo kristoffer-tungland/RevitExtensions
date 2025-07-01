@@ -2,6 +2,7 @@ using System;
 using Autodesk.Revit.DB;
 using System.Globalization;
 using RevitExtensions.Models;
+using RevitExtensions.Utilities;
 
 namespace RevitExtensions
 {
@@ -152,13 +153,23 @@ namespace RevitExtensions
         public static T GetParameterValue<T>(this Parameter parameter)
         {
             var value = parameter.GetParameterValue();
-            if (value == null) return default;
+            if (value == null)
+                return default;
 
-            if (value is T t) return t;
+            if (value is T t)
+                return t;
 
-            var target = typeof(T);
+            if (CustomConverter.TryConvert(value, parameter, out T result))
+                return result;
 
-            return (T)CustomConvert.ChangeType(value, target);
+            try
+            {
+                return (T)System.Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return default!;
+            }
         }
 
         /// <summary>
@@ -202,14 +213,8 @@ namespace RevitExtensions
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static T GetParameterValue<T>(this Element element, string identifier)
         {
-            var value = element.GetParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConvert.ChangeType(value, target);
+            using var parameter = element.GetParameter(ParameterIdentifier.Parse(identifier));
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
@@ -222,14 +227,8 @@ namespace RevitExtensions
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
         public static T GetParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
-            var value = element.GetParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConvert.ChangeType(value, target);
+            using var parameter = element.GetParameter(identifier);
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
@@ -297,33 +296,23 @@ namespace RevitExtensions
 
         public static T LookupParameterValue<T>(this Element element, string identifier)
         {
-            var value = element.LookupParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConvert.ChangeType(value, target);
+            using var parameter = element.LookupParameter(ParameterIdentifier.Parse(identifier));
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         public static T LookupParameterValue<T>(this Element element, ParameterIdentifier identifier)
         {
-            var value = element.LookupParameterValue(identifier);
-            if (value == null) return default;
-
-            if (value is T t) return t;
-
-            var target = typeof(T);
-
-            return (T)CustomConvert.ChangeType(value, target);
+            using var parameter = element.LookupParameter(identifier);
+            return parameter != null ? parameter.GetParameterValue<T>() : default;
         }
 
         /// <summary>
         /// Sets the value of the parameter.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
-        /// <param name="value">The value to set.</param>
+        /// <param name="value">The value to set. Strings starting with '=' are
+        /// evaluated as arithmetic expressions supporting m, cm, mm, ft and in
+        /// units.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when setting the value fails.</exception>
         public static void SetParameterValue(this Parameter parameter, object value)
@@ -336,7 +325,9 @@ namespace RevitExtensions
         /// Sets the value of the parameter.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
-        /// <param name="value">The value to set.</param>
+        /// <param name="value">The value to set. Strings starting with '=' are
+        /// evaluated as arithmetic expressions supporting m, cm, mm, ft and in
+        /// units.</param>
         /// <param name="reason">Outputs the failure reason.</param>
         /// <returns>True if successful.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
@@ -357,7 +348,7 @@ namespace RevitExtensions
             {
                 case StorageType.Double:
                     double d;
-                    if (!CustomConvert.TryToDouble(value, out d))
+                    if (!CustomConverter.TryConvert(value, parameter, out d))
                     {
                         reason = "Value must be a number.";
                         return false;
@@ -368,7 +359,7 @@ namespace RevitExtensions
                     break;
                 case StorageType.Integer:
                     int i;
-                    if (!CustomConvert.TryToInt32(value, out i))
+                    if (!CustomConverter.TryConvert(value, parameter, out i))
                     {
                         reason = "Value must be an integer.";
                         return false;
@@ -378,14 +369,16 @@ namespace RevitExtensions
                     result = parameter.Set(i);
                     break;
                 case StorageType.String:
-                    string str = CustomConvert.ToString(value);
+                    string str;
+                    if (!CustomConverter.TryConvert(value, parameter, out str))
+                        str = CustomConverter.ToInvariantString(value);
 
                     if (string.Equals(parameter.AsString(), str)) return true;
                     result = parameter.Set(str);
                     break;
                 case StorageType.ElementId:
                     ElementId id;
-                    if (!CustomConvert.TryToElementId(value, out id))
+                    if (!CustomConverter.TryConvert(value, parameter, out id))
                     {
                         reason = "Value must be an ElementId.";
                         return false;
@@ -549,5 +542,6 @@ namespace RevitExtensions
             }
             return null;
         }
+
     }
 }

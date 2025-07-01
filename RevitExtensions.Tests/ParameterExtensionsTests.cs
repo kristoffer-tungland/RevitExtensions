@@ -169,10 +169,33 @@ namespace RevitExtensions.Tests
         public void SetParameterValue_SetsValue()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
 
             parameter.SetParameterValue(3.5);
 
             Assert.Equal(3.5, parameter.AsDouble());
+        }
+
+        [Fact]
+        public void SetParameterValue_Expression_Evaluated()
+        {
+            var doc = new Document();
+            var element = new Element(doc, new ElementId(1));
+            var parameter = new Parameter("A") { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
+            element.Parameters.Add(parameter);
+
+            element.SetParameterValue(ParameterIdentifier.Parse("A"), "=1m + 50cm");
+
+            Assert.InRange(parameter.AsDouble(), 4.92, 4.93);
         }
 
         [Fact]
@@ -205,6 +228,25 @@ namespace RevitExtensions.Tests
             element.SetParameterValue(ParameterIdentifier.Parse("10"), 5);
 
             Assert.Equal(5, parameter.AsInteger());
+        }
+
+        [Fact]
+        public void Element_SetParameterValue_Expression_UsesUnits()
+        {
+            var doc = new Document();
+            doc.SetTestLengthUnitScale(0.00328083989501312); // mm
+            var element = new Element(doc, new ElementId(1));
+            var parameter = new Parameter(new ElementId(11)) { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
+            element.Parameters.Add(parameter);
+
+            element.SetParameterValue(ParameterIdentifier.Parse("11"), "=10");
+
+            Assert.InRange(parameter.AsDouble(), 0.032, 0.033);
         }
 
         [Fact]
