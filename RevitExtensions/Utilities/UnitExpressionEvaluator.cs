@@ -9,13 +9,14 @@ namespace RevitExtensions.Utilities
 {
     /// <summary>
     /// Evaluates arithmetic expressions containing length units.
-    /// Supported units are meters (m), centimeters (cm), millimeters (mm),
-    /// feet (ft) and inches (in).
+    /// Supported units include meters (m), centimeters (cm), millimeters (mm),
+    /// feet (ft), feet and inches (ft-in) and inches (in). Other symbols are
+    /// ignored if no conversion is known.
     /// </summary>
     internal static class UnitExpressionEvaluator
     {
         private static readonly Regex TokenRegex =
-            new Regex(@"(-?\d+(?:\.\d+)?)(?:\s*(m|cm|mm|ft|in))?",
+            new Regex(@"(-?\d+(?:\.\d+)?)(?:\s*([a-zA-Z0-9°²³/\-]+))?",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static bool TryEvaluate(string expression, Parameter parameter, out double value)
@@ -48,7 +49,7 @@ namespace RevitExtensions.Utilities
             {
                 var number = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 var unit = m.Groups[2].Value.ToLowerInvariant();
-                if (UnitIdUtils.TryParseLengthUnit(unit, out var id))
+                if (UnitIdUtils.TryParseUnitSymbol(unit, out var id))
                 {
                     number = number.Convert(id, displayUnitId);
                 }
