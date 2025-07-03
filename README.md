@@ -71,7 +71,7 @@ required. Run tests with defines for a specific Revit version, for example:
 ```bash
 dotnet test RevitExtensions.sln -c Release \
   -p:UseRevitApiStubs=true \
-  -p:DefineConstants=REVIT2026%3BREVIT2026_OR_ABOVE%3BREVIT2025_OR_ABOVE%3BREVIT2024_OR_ABOVE
+  -p:DefineConstants=REVIT2026%3BREVIT2026_OR_ABOVE%3BREVIT2025_OR_ABOVE%3BREVIT2024_OR_ABOVE%3BREVIT2020_OR_ABOVE
 ```
 
 ## Available extensions
