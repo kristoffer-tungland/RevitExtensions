@@ -172,6 +172,11 @@ namespace Autodesk.Revit.DB
         public ParameterSet Parameters { get; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the element can be modified.
+        /// </summary>
+        public bool IsModifiable { get; set; } = true;
+
+        /// <summary>
         /// Gets a value indicating whether <see cref="Dispose"/> has been called.
         /// </summary>
         public bool IsDisposed { get; private set; }
@@ -253,7 +258,8 @@ namespace Autodesk.Revit.DB
     {
         public bool IsWorkshared { get; set; }
         public string CurrentUser { get; set; }
-        public bool IsModifiable { get; set; }
+        public bool IsModifiable { get; set; } = true;
+        public bool IsLinked { get; set; }
 
         /// <summary>
         /// Gets or sets the application associated with the document.

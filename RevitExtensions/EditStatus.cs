@@ -26,6 +26,16 @@ namespace RevitExtensions
         /// The element is owned by another user.
         /// </summary>
         OwnedByOtherUser,
+
+        /// <summary>
+        /// The model is temporarily locked and the element cannot be modified.
+        /// </summary>
+        ModelLocked,
+
+        /// <summary>
+        /// The element resides in a linked model.
+        /// </summary>
+        LinkedModel,
     }
 
     /// <summary>
@@ -50,6 +60,10 @@ namespace RevitExtensions
                     return "Owned by current user";
                 case EditStatus.OwnedByOtherUser:
                     return "Owned by another user";
+                case EditStatus.ModelLocked:
+                    return "Model is temporarily locked";
+                case EditStatus.LinkedModel:
+                    return "Element is in a linked model";
                 default:
                     return status.ToString();
             }
