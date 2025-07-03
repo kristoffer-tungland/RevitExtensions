@@ -40,6 +40,40 @@ namespace Autodesk.Revit.DB
         }
     }
 
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.WorksetId.
+    /// </summary>
+    public class WorksetId
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorksetId"/> class.
+        /// </summary>
+        /// <param name="id">The integer value.</param>
+        public WorksetId(int id) => IntegerValue = id;
+
+        /// <summary>
+        /// Gets the value of the workset id as an integer.
+        /// </summary>
+        public int IntegerValue { get; }
+    }
+
+    /// <summary>
+    /// Minimal stand-in for Autodesk.Revit.DB.Workset.
+    /// </summary>
+    public class Workset
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Workset"/> class.
+        /// </summary>
+        /// <param name="id">The workset id.</param>
+        public Workset(WorksetId id) => Id = id;
+
+        /// <summary>
+        /// Gets the workset id.
+        /// </summary>
+        public WorksetId Id { get; }
+    }
+
 #if REVIT2021_OR_LESS
     public enum UnitType
     {
@@ -552,7 +586,13 @@ namespace Autodesk.Revit.DB
         }
     }
 
-    public enum BuiltInParameter { }
+    public enum BuiltInParameter
+    {
+        /// <summary>
+        /// Identifies the workset parameter on an element.
+        /// </summary>
+        ELEM_PARTITION_PARAM = -201
+    }
 
     public enum StorageType
     {

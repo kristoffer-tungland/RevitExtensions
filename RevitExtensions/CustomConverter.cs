@@ -29,6 +29,8 @@ namespace RevitExtensions
             Register(new LongToElementIdConverter());
             Register(new StringToElementIdConverter());
             Register(new ElementIdToLongConverter());
+            Register(new WorksetToIntConverter());
+            Register(new WorksetIdToIntConverter());
         }
 
         /// <summary>
@@ -255,6 +257,30 @@ namespace RevitExtensions
             public bool TryConvert(ElementId value, Parameter parameter, out long result)
             {
                 result = value.GetElementIdValue();
+                return true;
+            }
+        }
+
+        private class WorksetToIntConverter : IParameterConverter<Workset, int>
+        {
+            public bool TryConvert(Workset value, Parameter parameter, out int result)
+            {
+                if (value == null)
+                {
+                    result = default;
+                    return false;
+                }
+
+                result = value.Id.IntegerValue;
+                return true;
+            }
+        }
+
+        private class WorksetIdToIntConverter : IParameterConverter<WorksetId, int>
+        {
+            public bool TryConvert(WorksetId value, Parameter parameter, out int result)
+            {
+                result = value.IntegerValue;
                 return true;
             }
         }
