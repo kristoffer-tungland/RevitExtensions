@@ -210,6 +210,22 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void TrySetParameterValue_ElementNotEditable_ReturnsFalseWithReason()
+        {
+            var doc = new Document { IsWorkshared = true, CurrentUser = "A" };
+            var id = new ElementId(101);
+            doc.SetElementOwner(id, "B");
+            var element = new Element(doc, id);
+            var parameter = new Parameter("E") { StorageType = StorageType.String };
+            element.Parameters.Add(parameter);
+
+            var result = parameter.TrySetParameterValue("foo", out var reason);
+
+            Assert.False(result);
+            Assert.Equal(EditStatus.OwnedByOtherUser.ToFriendlyString(), reason);
+        }
+
+        [Fact]
         public void SetParameterValue_ReadOnly_Throws()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.String, IsReadOnly = true };
