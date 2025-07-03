@@ -1,5 +1,6 @@
 using System;
 using Autodesk.Revit.DB;
+using RevitExtensions.Models;
 
 namespace RevitExtensions
 {
@@ -158,6 +159,34 @@ namespace RevitExtensions
             if (typeId == null) return null;
 
             return document.GetElement(typeId);
+        }
+
+        /// <summary>
+        /// Assigns the element to the specified workset.
+        /// </summary>
+        /// <param name="element">The element to modify.</param>
+        /// <param name="workset">The workset to assign.</param>
+        public static void SetWorkset(this Element element, Workset workset)
+        {
+            if (workset == null) throw new ArgumentNullException(nameof(workset));
+            element.SetWorkset(workset.Id);
+        }
+
+        /// <summary>
+        /// Assigns the element to the specified workset.
+        /// </summary>
+        /// <param name="element">The element to modify.</param>
+        /// <param name="worksetId">The workset id to assign.</param>
+        public static void SetWorkset(this Element element, WorksetId worksetId)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (worksetId == null) throw new ArgumentNullException(nameof(worksetId));
+
+            var identifier = new ParameterIdentifier
+            {
+                BuiltInParameter = BuiltInParameter.ELEM_PARTITION_PARAM
+            };
+            element.SetParameterValue(identifier, worksetId);
         }
     }
 }

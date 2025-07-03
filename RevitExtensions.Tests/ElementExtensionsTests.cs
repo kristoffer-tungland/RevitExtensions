@@ -156,5 +156,30 @@ namespace RevitExtensions.Tests
             Assert.False(result);
             Assert.Equal(EditStatus.LinkedModel, status);
         }
+
+        [Fact]
+        public void SetWorkset_ById_UpdatesParameter()
+        {
+            var element = new Element(new ElementId(20));
+            var parameter = new Parameter(BuiltInParameter.ELEM_PARTITION_PARAM) { StorageType = StorageType.Integer };
+            element.Parameters.Add(parameter);
+
+            element.SetWorkset(new WorksetId(3));
+
+            Assert.Equal(3, parameter.AsInteger());
+        }
+
+        [Fact]
+        public void SetWorkset_ByWorkset_UpdatesParameter()
+        {
+            var element = new Element(new ElementId(21));
+            var parameter = new Parameter(BuiltInParameter.ELEM_PARTITION_PARAM) { StorageType = StorageType.Integer };
+            element.Parameters.Add(parameter);
+            var ws = new Workset(new WorksetId(5));
+
+            element.SetWorkset(ws);
+
+            Assert.Equal(5, parameter.AsInteger());
+        }
     }
 }
