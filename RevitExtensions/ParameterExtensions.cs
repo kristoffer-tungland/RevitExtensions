@@ -337,6 +337,13 @@ namespace RevitExtensions
 
             reason = null;
 
+            var owner = parameter.Element;
+            if (owner != null && !owner.CanEdit(out var status))
+            {
+                reason = status.ToFriendlyString();
+                return false;
+            }
+
             if (parameter.IsReadOnly)
             {
                 reason = "Parameter is read-only.";
