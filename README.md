@@ -66,7 +66,9 @@ framework so a plain `dotnet restore` succeeds without extra properties.
 ## Running tests
 
 The test project uses the `RevitApiStubs` library so no Autodesk binaries are
-required. Run tests with defines for a specific Revit version, for example:
+required. The build script automatically sets compilation symbols for the latest
+Revit release, but you can run tests manually with explicit defines, for
+example:
 
 ```bash
 dotnet test RevitExtensions.sln -c Release \
