@@ -31,6 +31,10 @@ namespace RevitExtensions
             Register(new ElementIdToLongConverter());
             Register(new WorksetToIntConverter());
             Register(new WorksetIdToIntConverter());
+            Register(new StringToParameterValueConverter());
+            Register(new IntToParameterValueConverter());
+            Register(new DoubleToParameterValueConverter());
+            Register(new ElementIdToParameterValueConverter());
         }
 
         /// <summary>
@@ -283,6 +287,95 @@ namespace RevitExtensions
                 result = value.IntegerValue;
                 return true;
             }
+        }
+
+        private class StringToParameterValueConverter : IParameterConverter<string, Models.ParameterValue>
+        {
+            public bool TryConvert(string value, Parameter parameter, out Models.ParameterValue result)
+            {
+                result = new Models.ParameterValue
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Text)
+                };
+                return true;
+            }
+        }
+
+        private class IntToParameterValueConverter : IParameterConverter<int, Models.ParameterValue>
+        {
+            public bool TryConvert(int value, Parameter parameter, out Models.ParameterValue result)
+            {
+                result = new Models.ParameterValue
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Integer)
+                };
+                return true;
+            }
+        }
+
+        private class DoubleToParameterValueConverter : IParameterConverter<double, Models.ParameterValue>
+        {
+            public bool TryConvert(double value, Parameter parameter, out Models.ParameterValue result)
+            {
+                result = new Models.ParameterValue
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Number)
+                };
+                return true;
+            }
+        }
+
+        private class ElementIdToParameterValueConverter : IParameterConverter<ElementId, Models.ParameterValue>
+        {
+            public bool TryConvert(ElementId value, Parameter parameter, out Models.ParameterValue result)
+            {
+                if (value == null)
+                {
+                    result = default!;
+                    return false;
+                }
+
+                result = new Models.ParameterValue
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Element)
+                };
+                return true;
+            }
+        }
+
+        private static Models.ParameterValueType GetValueType(Parameter parameter, Models.ParameterValueType defaultType)
+        {
+            if (parameter == null)
+                return defaultType;
+
+            BuiltInParameter? bip = null;
+
+            var prop = parameter.GetType().GetProperty("BuiltInParameter");
+            if (prop != null)
+            {
+                var val = prop.GetValue(parameter);
+                if (val is BuiltInParameter b)
+                    bip = b;
+            }
+            else if (parameter.Id != null)
+            {
+                var intValue = (int)parameter.Id.GetElementIdValue();
+                if (intValue < 0)
+                    bip = (BuiltInParameter)intValue;
+            }
+
+            if (bip == BuiltInParameter.ELEM_PARTITION_PARAM)
+                return Models.ParameterValueType.Workset;
+
+            return defaultType;
         }
     }
 }
