@@ -130,10 +130,15 @@ class Build : NukeBuild
     Target Test => _ => _
         .Executes(() =>
         {
+            var (year, _) = RevitVersions[^1];
+            var defines = BuildDefines(year);
+            var encodedDefs = defines.Replace(";", "%3B");
+
             DotNetTest(s => s
                 .SetProjectFile(RootDirectory / "RevitExtensions.sln")
                 .SetConfiguration(Configuration.Release)
-                .SetProperty("UseRevitApiStubs", "true"));
+                .SetProperty("UseRevitApiStubs", "true")
+                .SetProperty("DefineConstants", encodedDefs));
         });
 
     Target Publish => _ => _

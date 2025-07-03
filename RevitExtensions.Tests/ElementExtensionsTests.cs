@@ -132,5 +132,29 @@ namespace RevitExtensions.Tests
 
             Assert.Null(result);
         }
+
+        [Fact]
+        public void CanEdit_ModelLocked_ReturnsFalse()
+        {
+            var doc = new Document { IsWorkshared = true, CurrentUser = "A" };
+            var element = new Element(doc, new ElementId(14)) { IsModifiable = false };
+
+            var result = element.CanEdit(out var status);
+
+            Assert.False(result);
+            Assert.Equal(EditStatus.ModelLocked, status);
+        }
+
+        [Fact]
+        public void CanEdit_LinkedModel_ReturnsFalse()
+        {
+            var doc = new Document { IsWorkshared = true, CurrentUser = "A", IsLinked = true };
+            var element = new Element(doc, new ElementId(15));
+
+            var result = element.CanEdit(out var status);
+
+            Assert.False(result);
+            Assert.Equal(EditStatus.LinkedModel, status);
+        }
     }
 }

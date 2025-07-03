@@ -93,26 +93,53 @@ namespace RevitExtensions
             if (element == null) throw new ArgumentNullException(nameof(element));
 
             var document = element.Document;
+            bool canEdit;
+
             if (document == null || !document.IsWorkshared)
             {
                 status = EditStatus.NotWorkshared;
-                return true;
+                canEdit = true;
             }
-
-            var checkout = WorksharingUtils.GetCheckoutStatus(document, element.Id);
-
-            switch (checkout)
+            else
             {
-                case CheckoutStatus.OwnedByCurrentUser:
-                    status = EditStatus.OwnedByCurrentUser;
-                    return true;
-                case CheckoutStatus.NotOwned:
-                    status = EditStatus.Editable;
-                    return true;
-                default:
-                    status = EditStatus.OwnedByOtherUser;
-                    return false;
+                var checkout = WorksharingUtils.GetCheckoutStatus(document, element.Id);
+                switch (checkout)
+                {
+                    case CheckoutStatus.OwnedByCurrentUser:
+                        status = EditStatus.OwnedByCurrentUser;
+                        canEdit = true;
+                        break;
+                    case CheckoutStatus.NotOwned:
+                        status = EditStatus.Editable;
+                        canEdit = true;
+                        break;
+                    default:
+                        status = EditStatus.OwnedByOtherUser;
+                        canEdit = false;
+                        break;
+                }
             }
+
+            if (!canEdit)
+                return false;
+
+#if REVIT2020_OR_ABOVE
+            if (document != null && document.IsLinked)
+            {
+                status = EditStatus.LinkedModel;
+                return false;
+            }
+#endif
+
+#if REVIT2024_OR_ABOVE
+            if (!element.IsModifiable)
+            {
+                status = EditStatus.ModelLocked;
+                return false;
+            }
+#endif
+
+            return true;
         }
 
         /// <summary>

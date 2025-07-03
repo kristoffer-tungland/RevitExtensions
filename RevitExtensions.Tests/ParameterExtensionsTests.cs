@@ -226,6 +226,34 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
+        public void TrySetParameterValue_ElementLocked_ReturnsFalseWithReason()
+        {
+            var doc = new Document { IsWorkshared = true, CurrentUser = "A" };
+            var element = new Element(doc, new ElementId(102)) { IsModifiable = false };
+            var parameter = new Parameter("F") { StorageType = StorageType.String };
+            element.Parameters.Add(parameter);
+
+            var result = parameter.TrySetParameterValue("foo", out var reason);
+
+            Assert.False(result);
+            Assert.Equal(EditStatus.ModelLocked.ToFriendlyString(), reason);
+        }
+
+        [Fact]
+        public void TrySetParameterValue_ElementInLinkedModel_ReturnsFalseWithReason()
+        {
+            var doc = new Document { IsWorkshared = true, CurrentUser = "A", IsLinked = true };
+            var element = new Element(doc, new ElementId(103));
+            var parameter = new Parameter("G") { StorageType = StorageType.String };
+            element.Parameters.Add(parameter);
+
+            var result = parameter.TrySetParameterValue("foo", out var reason);
+
+            Assert.False(result);
+            Assert.Equal(EditStatus.LinkedModel.ToFriendlyString(), reason);
+        }
+
+        [Fact]
         public void SetParameterValue_ReadOnly_Throws()
         {
             var parameter = new Parameter("A") { StorageType = StorageType.String, IsReadOnly = true };
