@@ -20,7 +20,7 @@ namespace RevitExtensions.Models
     /// <summary>
     /// Represents a value assigned to a parameter.
     /// </summary>
-    public class ParameterValue
+    public class ParameterValueDetailed
     {
         /// <summary>
         /// Gets or sets the value.

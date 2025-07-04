@@ -144,6 +144,26 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Retrieves detailed information about the parameter value.
+        /// </summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <returns>A <see cref="ParameterValueDetailed"/> instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
+        public static ParameterValueDetailed GetParameterValueDetailed(this Parameter parameter)
+        {
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+
+            var value = parameter.GetParameterValue();
+
+            return new ParameterValueDetailed
+            {
+                Value = value,
+                ValueString = parameter.AsValueString(),
+                ValueType = GetParameterValueType(parameter),
+            };
+        }
+
+        /// <summary>
         /// Retrieves the value stored in the parameter and converts it to the specified type.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
@@ -201,6 +221,37 @@ namespace RevitExtensions
 
             using var parameter = element.GetParameter(identifier);
             return parameter?.GetParameterValue();
+        }
+
+        /// <summary>
+        /// Retrieves detailed information about the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier string.</param>
+        /// <returns>The detailed parameter value or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static ParameterValueDetailed? GetParameterValueDetailed(this Element element, string identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            return element.GetParameterValueDetailed(ParameterIdentifier.Parse(identifier));
+        }
+
+        /// <summary>
+        /// Retrieves detailed information about the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The detailed parameter value or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static ParameterValueDetailed? GetParameterValueDetailed(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            using var parameter = element.GetParameter(identifier);
+            return parameter?.GetParameterValueDetailed();
         }
 
         /// <summary>
@@ -527,6 +578,41 @@ namespace RevitExtensions
             }
 
             return identifier;
+        }
+
+        private static ParameterValueType GetParameterValueType(Parameter parameter)
+        {
+            if (parameter == null)
+                return ParameterValueType.Text;
+
+            var defaultType = parameter.StorageType switch
+            {
+                StorageType.Integer => ParameterValueType.Integer,
+                StorageType.Double => ParameterValueType.Number,
+                StorageType.ElementId => ParameterValueType.Element,
+                _ => ParameterValueType.Text,
+            };
+
+            BuiltInParameter? bip = null;
+
+            var prop = parameter.GetType().GetProperty("BuiltInParameter");
+            if (prop != null)
+            {
+                var val = prop.GetValue(parameter);
+                if (val is BuiltInParameter b)
+                    bip = b;
+            }
+            else if (parameter.Id != null)
+            {
+                var intValue = (int)parameter.Id.GetElementIdValue();
+                if (intValue < 0)
+                    bip = (BuiltInParameter)intValue;
+            }
+
+            if (bip == BuiltInParameter.ELEM_PARTITION_PARAM)
+                return ParameterValueType.Workset;
+
+            return defaultType;
         }
 
         private static Guid? TryGetGuid(Parameter parameter)

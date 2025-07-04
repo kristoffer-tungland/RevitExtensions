@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Autodesk.Revit.DB;
 using RevitExtensions.Utilities;
+using RevitExtensions.Models;
 
 namespace RevitExtensions
 {
@@ -289,11 +290,11 @@ namespace RevitExtensions
             }
         }
 
-        private class StringToParameterValueConverter : IParameterConverter<string, Models.ParameterValue>
+        private class StringToParameterValueConverter : IParameterConverter<string, ParameterValueDetailed>
         {
-            public bool TryConvert(string value, Parameter parameter, out Models.ParameterValue result)
+            public bool TryConvert(string value, Parameter parameter, out ParameterValueDetailed result)
             {
-                result = new Models.ParameterValue
+                result = new ParameterValueDetailed
                 {
                     Value = value,
                     ValueString = parameter.AsValueString(),
@@ -303,11 +304,11 @@ namespace RevitExtensions
             }
         }
 
-        private class IntToParameterValueConverter : IParameterConverter<int, Models.ParameterValue>
+        private class IntToParameterValueConverter : IParameterConverter<int, ParameterValueDetailed>
         {
-            public bool TryConvert(int value, Parameter parameter, out Models.ParameterValue result)
+            public bool TryConvert(int value, Parameter parameter, out ParameterValueDetailed result)
             {
-                result = new Models.ParameterValue
+                result = new ParameterValueDetailed
                 {
                     Value = value,
                     ValueString = parameter.AsValueString(),
@@ -317,11 +318,11 @@ namespace RevitExtensions
             }
         }
 
-        private class DoubleToParameterValueConverter : IParameterConverter<double, Models.ParameterValue>
+        private class DoubleToParameterValueConverter : IParameterConverter<double, ParameterValueDetailed>
         {
-            public bool TryConvert(double value, Parameter parameter, out Models.ParameterValue result)
+            public bool TryConvert(double value, Parameter parameter, out ParameterValueDetailed result)
             {
-                result = new Models.ParameterValue
+                result = new ParameterValueDetailed
                 {
                     Value = value,
                     ValueString = parameter.AsValueString(),
@@ -331,9 +332,9 @@ namespace RevitExtensions
             }
         }
 
-        private class ElementIdToParameterValueConverter : IParameterConverter<ElementId, Models.ParameterValue>
+        private class ElementIdToParameterValueConverter : IParameterConverter<ElementId, ParameterValueDetailed>
         {
-            public bool TryConvert(ElementId value, Parameter parameter, out Models.ParameterValue result)
+            public bool TryConvert(ElementId value, Parameter parameter, out ParameterValueDetailed result)
             {
                 if (value == null)
                 {
@@ -341,7 +342,7 @@ namespace RevitExtensions
                     return false;
                 }
 
-                result = new Models.ParameterValue
+                result = new ParameterValueDetailed
                 {
                     Value = value,
                     ValueString = parameter.AsValueString(),
