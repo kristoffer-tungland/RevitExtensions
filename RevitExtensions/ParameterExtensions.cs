@@ -153,14 +153,7 @@ namespace RevitExtensions
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
 
-            var value = parameter.GetParameterValue();
-
-            return new ParameterValueDetailed
-            {
-                Value = value,
-                ValueString = parameter.AsValueString(),
-                ValueType = GetParameterValueType(parameter),
-            };
+            return GetValueDetailed(parameter);
         }
 
         /// <summary>
@@ -606,6 +599,18 @@ namespace RevitExtensions
                 return ParameterValueType.Workset;
 
             return defaultType;
+        }
+
+        private static ParameterValueDetailed GetValueDetailed(Parameter parameter)
+        {
+            var value = parameter.GetParameterValue();
+
+            return new ParameterValueDetailed
+            {
+                Value = value,
+                ValueString = parameter.AsValueString(),
+                ValueType = GetParameterValueType(parameter),
+            };
         }
 
         private static Guid? TryGetGuid(Parameter parameter)
