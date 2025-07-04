@@ -396,12 +396,12 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetParameterValueDetailed_FromParameter_ReturnsDetails()
+        public void GetValueDetailed_FromParameter_ReturnsDetails()
         {
             var parameter = new Parameter("F") { StorageType = StorageType.Integer };
             parameter.Set(5);
 
-            var detailed = parameter.GetParameterValueDetailed();
+            var detailed = parameter.GetValueDetailed();
 
             Assert.Equal(5, detailed.Value);
             Assert.Equal(parameter.AsValueString(), detailed.ValueString);
@@ -409,7 +409,7 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void Element_GetParameterValueDetailed_ReturnsDetails()
+        public void Element_GetValueDetailed_ReturnsDetails()
         {
             var element = new Element(new ElementId(1));
             var parameter = new Parameter(new ElementId(20)) { StorageType = StorageType.Double };
@@ -421,7 +421,7 @@ namespace RevitExtensions.Tests
             parameter.Set(3.5);
             element.Parameters.Add(parameter);
 
-            var detailed = element.GetParameterValueDetailed(ParameterIdentifier.Parse("20"));
+            var detailed = element.GetValueDetailed(ParameterIdentifier.Parse("20"));
 
             Assert.NotNull(detailed);
             Assert.Equal(3.5, detailed.Value);
@@ -430,12 +430,12 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetParameterValueDetailed_WorksetParameter_ReturnsWorksetType()
+        public void GetValueDetailed_WorksetParameter_ReturnsWorksetType()
         {
             var parameter = new Parameter(BuiltInParameter.ELEM_PARTITION_PARAM) { StorageType = StorageType.ElementId };
             parameter.Set(new ElementId(42));
 
-            var detailed = parameter.GetParameterValueDetailed();
+            var detailed = parameter.GetValueDetailed();
 
             Assert.Equal(ParameterValueType.Workset, detailed.ValueType);
         }

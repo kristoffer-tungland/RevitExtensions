@@ -149,11 +149,11 @@ namespace RevitExtensions
         /// <param name="parameter">The parameter.</param>
         /// <returns>A <see cref="ParameterValueDetailed"/> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
-        public static ParameterValueDetailed GetParameterValueDetailed(this Parameter parameter)
+        public static ParameterValueDetailed GetValueDetailed(this Parameter parameter)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
 
-            return GetValueDetailed(parameter);
+            return BuildValueDetailed(parameter);
         }
 
         /// <summary>
@@ -223,12 +223,12 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier string.</param>
         /// <returns>The detailed parameter value or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static ParameterValueDetailed? GetParameterValueDetailed(this Element element, string identifier)
+        public static ParameterValueDetailed? GetValueDetailed(this Element element, string identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
-            return element.GetParameterValueDetailed(ParameterIdentifier.Parse(identifier));
+            return element.GetValueDetailed(ParameterIdentifier.Parse(identifier));
         }
 
         /// <summary>
@@ -238,13 +238,13 @@ namespace RevitExtensions
         /// <param name="identifier">The parameter identifier.</param>
         /// <returns>The detailed parameter value or null.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
-        public static ParameterValueDetailed? GetParameterValueDetailed(this Element element, ParameterIdentifier identifier)
+        public static ParameterValueDetailed? GetValueDetailed(this Element element, ParameterIdentifier identifier)
         {
             if (element == null) throw new ArgumentNullException(nameof(element));
             if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
             using var parameter = element.GetParameter(identifier);
-            return parameter?.GetParameterValueDetailed();
+            return parameter?.GetValueDetailed();
         }
 
         /// <summary>
@@ -601,7 +601,7 @@ namespace RevitExtensions
             return defaultType;
         }
 
-        private static ParameterValueDetailed GetValueDetailed(Parameter parameter)
+        private static ParameterValueDetailed BuildValueDetailed(Parameter parameter)
         {
             var value = parameter.GetParameterValue();
 
