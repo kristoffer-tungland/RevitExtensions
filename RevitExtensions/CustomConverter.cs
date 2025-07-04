@@ -359,14 +359,12 @@ namespace RevitExtensions
 
             BuiltInParameter? bip = null;
 
-            var prop = parameter.GetType().GetProperty("BuiltInParameter");
-            if (prop != null)
+            if (parameter.Definition is InternalDefinition internalDef)
             {
-                var val = prop.GetValue(parameter);
-                if (val is BuiltInParameter b)
-                    bip = b;
+                bip = internalDef.BuiltInParameter;
             }
-            else if (parameter.Id != null)
+
+            if (!bip.HasValue && parameter.Id != null)
             {
                 var intValue = (int)parameter.Id.GetElementIdValue();
                 if (intValue < 0)
