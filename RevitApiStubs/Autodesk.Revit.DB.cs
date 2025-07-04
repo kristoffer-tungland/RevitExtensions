@@ -647,6 +647,17 @@ namespace Autodesk.Revit.DB
 #endif
     }
 
+    /// <summary>
+    /// Simplified stand-in for Autodesk.Revit.DB.InternalDefinition.
+    /// </summary>
+    public class InternalDefinition : Definition
+    {
+        /// <summary>
+        /// Gets or sets the associated built-in parameter id.
+        /// </summary>
+        public BuiltInParameter BuiltInParameter { get; set; }
+    }
+
     public class Parameter : IDisposable
     {
         public BuiltInParameter? BuiltInParameter { get; }

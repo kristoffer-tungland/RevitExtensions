@@ -144,6 +144,19 @@ namespace RevitExtensions
         }
 
         /// <summary>
+        /// Retrieves detailed information about the parameter value.
+        /// </summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <returns>A <see cref="ParameterValueDetailed"/> instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameter"/> is null.</exception>
+        public static ParameterValueDetailed GetValueDetailed(this Parameter parameter)
+        {
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+
+            return BuildValueDetailed(parameter);
+        }
+
+        /// <summary>
         /// Retrieves the value stored in the parameter and converts it to the specified type.
         /// </summary>
         /// <param name="parameter">The parameter.</param>
@@ -201,6 +214,37 @@ namespace RevitExtensions
 
             using var parameter = element.GetParameter(identifier);
             return parameter?.GetParameterValue();
+        }
+
+        /// <summary>
+        /// Retrieves detailed information about the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier string.</param>
+        /// <returns>The detailed parameter value or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static ParameterValueDetailed? GetValueDetailed(this Element element, string identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            return element.GetValueDetailed(ParameterIdentifier.Parse(identifier));
+        }
+
+        /// <summary>
+        /// Retrieves detailed information about the parameter identified on the element.
+        /// </summary>
+        /// <param name="element">The element.</param>
+        /// <param name="identifier">The parameter identifier.</param>
+        /// <returns>The detailed parameter value or null.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> or <paramref name="identifier"/> is null.</exception>
+        public static ParameterValueDetailed? GetValueDetailed(this Element element, ParameterIdentifier identifier)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+
+            using var parameter = element.GetParameter(identifier);
+            return parameter?.GetValueDetailed();
         }
 
         /// <summary>
@@ -497,14 +541,9 @@ namespace RevitExtensions
                 identifier.Guid = guid.Value;
             }
 
-            var bipProp = parameter.GetType().GetProperty("BuiltInParameter");
-            if (bipProp != null)
+            if (parameter.Definition is InternalDefinition internalDef)
             {
-                var bipValue = bipProp.GetValue(parameter);
-                if (bipValue is BuiltInParameter bip)
-                {
-                    identifier.BuiltInParameter = bip;
-                }
+                identifier.BuiltInParameter = internalDef.BuiltInParameter;
             }
 
             if (parameter.Id != null)
@@ -527,6 +566,51 @@ namespace RevitExtensions
             }
 
             return identifier;
+        }
+
+        private static ParameterValueType GetParameterValueType(Parameter parameter)
+        {
+            if (parameter == null)
+                return ParameterValueType.Text;
+
+            var defaultType = parameter.StorageType switch
+            {
+                StorageType.Integer => ParameterValueType.Integer,
+                StorageType.Double => ParameterValueType.Number,
+                StorageType.ElementId => ParameterValueType.Element,
+                _ => ParameterValueType.Text,
+            };
+
+            BuiltInParameter? bip = null;
+
+            if (parameter.Definition is InternalDefinition internalDef)
+            {
+                bip = internalDef.BuiltInParameter;
+            }
+
+            if (!bip.HasValue && parameter.Id != null)
+            {
+                var intValue = (int)parameter.Id.GetElementIdValue();
+                if (intValue < 0)
+                    bip = (BuiltInParameter)intValue;
+            }
+
+            if (bip == BuiltInParameter.ELEM_PARTITION_PARAM)
+                return ParameterValueType.Workset;
+
+            return defaultType;
+        }
+
+        private static ParameterValueDetailed BuildValueDetailed(Parameter parameter)
+        {
+            var value = parameter.GetParameterValue();
+
+            return new ParameterValueDetailed
+            {
+                Value = value,
+                ValueString = parameter.AsValueString(),
+                ValueType = GetParameterValueType(parameter),
+            };
         }
 
         private static Guid? TryGetGuid(Parameter parameter)

@@ -394,5 +394,50 @@ namespace RevitExtensions.Tests
 
             Assert.Equal(dt, value);
         }
+
+        [Fact]
+        public void GetValueDetailed_FromParameter_ReturnsDetails()
+        {
+            var parameter = new Parameter("F") { StorageType = StorageType.Integer };
+            parameter.Set(5);
+
+            var detailed = parameter.GetValueDetailed();
+
+            Assert.Equal(5, detailed.Value);
+            Assert.Equal(parameter.AsValueString(), detailed.ValueString);
+            Assert.Equal(ParameterValueType.Integer, detailed.ValueType);
+        }
+
+        [Fact]
+        public void Element_GetValueDetailed_ReturnsDetails()
+        {
+            var element = new Element(new ElementId(1));
+            var parameter = new Parameter(new ElementId(20)) { StorageType = StorageType.Double };
+#if REVIT2021_OR_LESS
+            parameter.Definition.ParameterType = ParameterType.Length;
+#else
+            parameter.Definition.DataType = SpecTypeId.Length;
+#endif
+            parameter.Set(3.5);
+            element.Parameters.Add(parameter);
+
+            var detailed = element.GetValueDetailed(ParameterIdentifier.Parse("20"));
+
+            Assert.NotNull(detailed);
+            Assert.Equal(3.5, detailed.Value);
+            Assert.Equal(parameter.AsValueString(), detailed.ValueString);
+            Assert.Equal(ParameterValueType.Number, detailed.ValueType);
+        }
+
+        [Fact]
+        public void GetValueDetailed_WorksetParameter_ReturnsWorksetType()
+        {
+            var parameter = new Parameter(BuiltInParameter.ELEM_PARTITION_PARAM) { StorageType = StorageType.ElementId };
+            parameter.Set(new ElementId(42));
+
+            var detailed = parameter.GetValueDetailed();
+
+            Assert.Equal(ParameterValueType.Workset, detailed.ValueType);
+        }
     }
 }

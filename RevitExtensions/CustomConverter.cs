@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Autodesk.Revit.DB;
 using RevitExtensions.Utilities;
+using RevitExtensions.Models;
 
 namespace RevitExtensions
 {
@@ -31,6 +32,10 @@ namespace RevitExtensions
             Register(new ElementIdToLongConverter());
             Register(new WorksetToIntConverter());
             Register(new WorksetIdToIntConverter());
+            Register(new StringToParameterValueConverter());
+            Register(new IntToParameterValueConverter());
+            Register(new DoubleToParameterValueConverter());
+            Register(new ElementIdToParameterValueConverter());
         }
 
         /// <summary>
@@ -283,6 +288,93 @@ namespace RevitExtensions
                 result = value.IntegerValue;
                 return true;
             }
+        }
+
+        private class StringToParameterValueConverter : IParameterConverter<string, ParameterValueDetailed>
+        {
+            public bool TryConvert(string value, Parameter parameter, out ParameterValueDetailed result)
+            {
+                result = new ParameterValueDetailed
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Text)
+                };
+                return true;
+            }
+        }
+
+        private class IntToParameterValueConverter : IParameterConverter<int, ParameterValueDetailed>
+        {
+            public bool TryConvert(int value, Parameter parameter, out ParameterValueDetailed result)
+            {
+                result = new ParameterValueDetailed
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Integer)
+                };
+                return true;
+            }
+        }
+
+        private class DoubleToParameterValueConverter : IParameterConverter<double, ParameterValueDetailed>
+        {
+            public bool TryConvert(double value, Parameter parameter, out ParameterValueDetailed result)
+            {
+                result = new ParameterValueDetailed
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Number)
+                };
+                return true;
+            }
+        }
+
+        private class ElementIdToParameterValueConverter : IParameterConverter<ElementId, ParameterValueDetailed>
+        {
+            public bool TryConvert(ElementId value, Parameter parameter, out ParameterValueDetailed result)
+            {
+                if (value == null)
+                {
+                    result = default!;
+                    return false;
+                }
+
+                result = new ParameterValueDetailed
+                {
+                    Value = value,
+                    ValueString = parameter.AsValueString(),
+                    ValueType = GetValueType(parameter, Models.ParameterValueType.Element)
+                };
+                return true;
+            }
+        }
+
+        private static Models.ParameterValueType GetValueType(Parameter parameter, Models.ParameterValueType defaultType)
+        {
+            if (parameter == null)
+                return defaultType;
+
+            BuiltInParameter? bip = null;
+
+            if (parameter.Definition is InternalDefinition internalDef)
+            {
+                bip = internalDef.BuiltInParameter;
+            }
+
+            if (!bip.HasValue && parameter.Id != null)
+            {
+                var intValue = (int)parameter.Id.GetElementIdValue();
+                if (intValue < 0)
+                    bip = (BuiltInParameter)intValue;
+            }
+
+            if (bip == BuiltInParameter.ELEM_PARTITION_PARAM)
+                return Models.ParameterValueType.Workset;
+
+            return defaultType;
         }
     }
 }
