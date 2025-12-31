@@ -6,33 +6,36 @@ namespace RevitExtensions
 {
     internal static class ParameterElementExtensions
     {
-        public static Definition GetDefinitionSafe(this ParameterElement element)
+        extension (ParameterElement element)
         {
-            return element.GetDefinition();
-        }
+            public Definition SafeDefinition => element.GetDefinition();
 
-        public static Guid? GetGuidSafe(this ParameterElement element)
-        {
-            if (element is SharedParameterElement shared)
+            public Guid? SafeGuid
             {
-                return shared.GuidValue;
+                get
+                {
+                    if (element is SharedParameterElement shared)
+                    {
+                        return shared.GuidValue;
+                    }
+                    return null;
+                }
             }
-            return null;
-        }
 
-        public static bool GetIsInstanceSafe(this ParameterElement element, Document doc)
-        {
-            var binding = doc.ParameterBindings.get_Item(element.GetDefinitionSafe()) as ElementBinding;
-            return binding is InstanceBinding;
-        }
-
-        public static IEnumerable<BuiltInCategory> GetCategoriesSafe(this ParameterElement element, Document doc)
-        {
-            var binding = doc.ParameterBindings.get_Item(element.GetDefinitionSafe()) as ElementBinding;
-            if (binding != null)
+            public bool GetIsInstanceSafe(Document doc)
             {
-                foreach (Category c in binding.Categories)
-                    yield return (BuiltInCategory)c.Id.GetElementIdValue();
+                var binding = doc.ParameterBindings.get_Item(element.SafeDefinition) as ElementBinding;
+                return binding is InstanceBinding;
+            }
+
+            public IEnumerable<BuiltInCategory> GetCategoriesSafe(Document doc)
+            {
+                var binding = doc.ParameterBindings.get_Item(element.SafeDefinition) as ElementBinding;
+                if (binding != null)
+                {
+                    foreach (Category c in binding.Categories)
+                        yield return (BuiltInCategory)c.Id.Value;
+                }
             }
         }
     }

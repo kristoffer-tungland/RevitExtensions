@@ -37,10 +37,10 @@ var walls = document.InstancesOf<Wall>()
     .ToElements();
 
 // convert ids and check editing status
-long idValue = walls[0].Id.GetElementIdValue();
+long idValue = walls[0].IdValue;
 ElementId elementId = idValue.ToElementId();
 bool editable = walls[0].CanEdit(out var status);
-string statusText = status.ToFriendlyString();
+string statusText = status.FriendlyName;
 ```
 
 
@@ -93,7 +93,7 @@ The library exposes helpers for common Revit API patterns.
     `null` when the id does not exist.
 - `StartTransaction`, `StartTransactionGroup` and `StartSubTransaction` start
   the respective transaction object and ensure it began successfully.
-- `GetAvailableParameters()` – list project and built‑in parameters available in
+- `AvailableParameters` – list project and built‑in parameters available in
   the document. Overloads restrict the search to specific categories.
 - `LookupParameterId()` – resolve a parameter identifier by name, id or
   built‑in value.
@@ -128,15 +128,15 @@ The library exposes helpers for common Revit API patterns.
 
 ### ElementExtensions
 
-- `GetElementIdValue()` – returns the element id as a `long` regardless of
+- `IdValue` – returns the element id as a `long` regardless of
   Revit version.
-- `GetElementIdValue(ElementId)` – retrieve the numeric value of an
+- `ElementId.Value` – retrieve the numeric value of an
   `ElementId` without depending on the Revit version.
 - `ToElement()` – retrieve an element from a document by id. Generic overload
   casts the result to the specified element type.
-- `CanEdit(out EditStatus)` – determines if the element can be edited in the
+- `IsEditable` / `CanEdit(out EditStatus)` – determines if the element can be edited in the
   current workshared document.
-- `GetElementType()` – retrieves the element's type element.
+- `ElementType` – retrieves the element's type element.
 
 ### ParameterExtensions
 
@@ -176,11 +176,11 @@ be parsed from a string and provides a stable representation.
 - `GetRoom(Phase?)` – retrieve the associated room if available.
 - `GetSpace(Phase?)` – retrieve the associated space if available.
 - `GetRoomOrSpace(Phase?)` – return either the room or space.
-- `GetStoredRoomIds()` – dictionary of phase to stored room id.
-- `GetStoredSpaceIds()` – dictionary of phase to stored space id.
-- `GetStoredRoomPoints()` – dictionary of phase to stored room point.
-- `GetStoredSpacePoints()` – dictionary of phase to stored space point.
-- `HasStoredRoomOrSpace()` – returns true if any association exists.
+- `StoredRoomIds` – dictionary of phase to stored room id.
+- `StoredSpaceIds` – dictionary of phase to stored space id.
+- `StoredRoomPoints` – dictionary of phase to stored room point.
+- `StoredSpacePoints` – dictionary of phase to stored space point.
+- `HasStoredRoomOrSpace` – returns true if any association exists.
 
 ### ParameterFilterSetBuilder and ParameterFilterSet
 
@@ -200,4 +200,3 @@ information to disk.
 
 Describes a parameter found in the document, including the categories it applies
 to and whether it is an instance or type parameter.
-

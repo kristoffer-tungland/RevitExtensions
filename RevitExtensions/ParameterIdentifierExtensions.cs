@@ -9,20 +9,23 @@ namespace RevitExtensions
     /// </summary>
     internal static class ParameterIdentifierExtensions
     {
-        /// <summary>
-        /// Converts a <see cref="ParameterIdentifier"/> to an <see cref="ElementId"/> if possible.
-        /// </summary>
-        /// <param name="identifier">The identifier to convert.</param>
-        /// <returns>The element id if represented by the identifier; otherwise <c>null</c>.</returns>
-        public static ElementId? ToElementId(this ParameterIdentifier identifier)
+        extension (ParameterIdentifier identifier)
         {
-            if (identifier == null) throw new ArgumentNullException(nameof(identifier));
+            /// <summary>
+            /// Converts a <see cref="ParameterIdentifier"/> to an <see cref="ElementId"/> if possible.
+            /// </summary>
+            /// <param name="identifier">The identifier to convert.</param>
+            /// <returns>The element id if represented by the identifier; otherwise <c>null</c>.</returns>
+            public ElementId? ToElementId()
+            {
+                if (identifier == null) throw new ArgumentNullException(nameof(identifier));
 
-            if (identifier.BuiltInParameter.HasValue)
-                return identifier.BuiltInParameter.Value.ToElementId();
-            if (identifier.Id.HasValue)
-                return new ElementId((int)identifier.Id.Value);
-            return null;
+                if (identifier.BuiltInParameter.HasValue)
+                    return identifier.BuiltInParameter.Value.ToElementId();
+                if (identifier.Id.HasValue)
+                    return new ElementId((int)identifier.Id.Value);
+                return null;
+            }
         }
     }
 }

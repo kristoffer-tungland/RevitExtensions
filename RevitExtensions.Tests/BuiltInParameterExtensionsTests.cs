@@ -12,7 +12,7 @@ namespace RevitExtensions.Tests
             BuiltInParameter bip = (BuiltInParameter)(-42);
             var id = bip.ToElementId();
 
-            Assert.Equal(-42, id.GetElementIdValue());
+            Assert.Equal(-42, id.Value);
         }
     }
 }

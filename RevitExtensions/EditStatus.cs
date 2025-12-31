@@ -43,29 +43,34 @@ namespace RevitExtensions
     /// </summary>
     public static class EditStatusExtensions
     {
-        /// <summary>
-        /// Gets a human readable string for the given status.
-        /// </summary>
-        /// <param name="status">The status to describe.</param>
-        /// <returns>A user friendly description.</returns>
-        public static string ToFriendlyString(this EditStatus status)
+        extension (EditStatus status)
         {
-            switch (status)
+            /// <summary>
+            /// Gets a human readable string for the given status.
+            /// </summary>
+            /// <value>A user friendly description.</value>
+            public string FriendlyName
             {
-                case EditStatus.Editable:
-                    return "Editable";
-                case EditStatus.NotWorkshared:
-                    return "Not workshared";
-                case EditStatus.OwnedByCurrentUser:
-                    return "Owned by current user";
-                case EditStatus.OwnedByOtherUser:
-                    return "Owned by another user";
-                case EditStatus.ModelLocked:
-                    return "Model is temporarily locked";
-                case EditStatus.LinkedModel:
-                    return "Element is in a linked model";
-                default:
-                    return status.ToString();
+                get
+                {
+                    switch (status)
+                    {
+                        case EditStatus.Editable:
+                            return "Editable";
+                        case EditStatus.NotWorkshared:
+                            return "Not workshared";
+                        case EditStatus.OwnedByCurrentUser:
+                            return "Owned by current user";
+                        case EditStatus.OwnedByOtherUser:
+                            return "Owned by another user";
+                        case EditStatus.ModelLocked:
+                            return "Model is temporarily locked";
+                        case EditStatus.LinkedModel:
+                            return "Element is in a linked model";
+                        default:
+                            return status.ToString();
+                    }
+                }
             }
         }
     }

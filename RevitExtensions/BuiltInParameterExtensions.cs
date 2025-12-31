@@ -7,14 +7,17 @@ namespace RevitExtensions
     /// </summary>
     public static class BuiltInParameterExtensions
     {
-        /// <summary>
-        /// Converts a built-in parameter to an <see cref="ElementId"/>.
-        /// </summary>
-        /// <param name="parameter">The built-in parameter.</param>
-        /// <returns>The corresponding element id.</returns>
-        public static ElementId ToElementId(this BuiltInParameter parameter)
+        extension (BuiltInParameter parameter)
         {
-            return new ElementId((int)parameter);
+            /// <summary>
+            /// Converts a built-in parameter to an <see cref="ElementId"/>.
+            /// </summary>
+            /// <param name="parameter">The built-in parameter.</param>
+            /// <returns>The corresponding element id.</returns>
+            public ElementId ToElementId()
+            {
+                return new ElementId((int)parameter);
+            }
         }
     }
 }

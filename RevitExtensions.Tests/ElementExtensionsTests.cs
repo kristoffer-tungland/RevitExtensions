@@ -7,18 +7,18 @@ namespace RevitExtensions.Tests
     public class ElementExtensionsTests
     {
         [Fact]
-        public void GetElementIdValue_FromElementId_ReturnsValue()
+        public void Value_FromElementId_ReturnsValue()
         {
             var id = new ElementId(42);
-            Assert.Equal(42L, id.GetElementIdValue());
+            Assert.Equal(42L, id.Value);
         }
 
         [Fact]
-        public void GetElementIdValue_FromElement_ReturnsValue()
+        public void IdValue_FromElement_ReturnsValue()
         {
             var id = new ElementId(99);
             var element = new Element(id);
-            Assert.Equal(99L, element.GetElementIdValue());
+            Assert.Equal(99L, element.IdValue);
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetElementType_ReturnsTypeElement()
+        public void ElementType_ReturnsTypeElement()
         {
             var doc = new Document();
             var type = new Element(doc, new ElementId(10));
@@ -82,15 +82,15 @@ namespace RevitExtensions.Tests
 
             var element = new Element(doc, new ElementId(1)) { TypeId = new ElementId(10) };
 
-            using var result = element.GetElementType();
+            using var result = element.ElementType;
             Assert.Same(type, result);
         }
 
         [Fact]
-        public void GetElementType_NoDocument_ReturnsNull()
+        public void ElementType_NoDocument_ReturnsNull()
         {
             var element = new Element(new ElementId(2)) { TypeId = new ElementId(99) };
-            using var type = element.GetElementType();
+            using var type = element.ElementType;
             Assert.Null(type);
         }
 
