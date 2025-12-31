@@ -137,7 +137,7 @@ namespace RevitExtensions
             return value switch
             {
                 DateTime dt => dt.ToString("o"),
-                ElementId eid => eid.GetElementIdValue().ToString(CultureInfo.InvariantCulture),
+                ElementId eid => eid.Value.ToString(CultureInfo.InvariantCulture),
                 IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
                 _ => value?.ToString() ?? string.Empty
             };
@@ -261,7 +261,7 @@ namespace RevitExtensions
         {
             public bool TryConvert(ElementId value, Parameter parameter, out long result)
             {
-                result = value.GetElementIdValue();
+                result = value.Value;
                 return true;
             }
         }
@@ -366,7 +366,7 @@ namespace RevitExtensions
 
             if (!bip.HasValue && parameter.Id != null)
             {
-                var intValue = (int)parameter.Id.GetElementIdValue();
+                var intValue = (int)parameter.Id.Value;
                 if (intValue < 0)
                     bip = (BuiltInParameter)intValue;
             }

@@ -156,7 +156,7 @@ namespace RevitExtensions.Collectors
         {
             foreach (Category cat in categories)
             {
-                if (cat.Id.GetElementIdValue() < 0)
+                if (cat.Id.Value < 0)
                     continue;
 
                 var element = TryFindElement(doc, cat);
@@ -165,7 +165,7 @@ namespace RevitExtensions.Collectors
 
                 CollectParameters(element.Parameters, cat, true, result);
 
-                var typeElement = element.GetElementType();
+                var typeElement = element.ElementType;
                 if (typeElement != null)
                     CollectParameters(typeElement.Parameters, cat, false, result);
             }
@@ -176,7 +176,7 @@ namespace RevitExtensions.Collectors
         {
             foreach (Parameter p in set)
             {
-                var val = p.Id.GetElementIdValue();
+                var val = p.Id.Value;
                 if (val < 0)
                 {
                     var bip = (BuiltInParameter)val;
@@ -195,7 +195,7 @@ namespace RevitExtensions.Collectors
                         result[identifier] = info;
                     }
 
-                    info.Categories.Add((BuiltInCategory)cat.Id.GetElementIdValue());
+                    info.Categories.Add((BuiltInCategory)cat.Id.Value);
                 }
             }
         }
@@ -203,7 +203,7 @@ namespace RevitExtensions.Collectors
         private static Element? TryFindElement(Document doc, Category cat)
         {
             return new FilteredElementCollector(doc)
-                .WherePasses(new ElementCategoryFilter((BuiltInCategory)cat.Id.GetElementIdValue()))
+                .WherePasses(new ElementCategoryFilter((BuiltInCategory)cat.Id.Value))
                 .WhereElementIsNotElementType()
                 .FirstOrDefault();
         }

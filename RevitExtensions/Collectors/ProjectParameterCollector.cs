@@ -25,15 +25,15 @@ namespace RevitExtensions.Collectors
 
             foreach (ParameterElement pe in collector)
             {
-                var def = pe.GetDefinitionSafe();
+                var def = pe.SafeDefinition;
                 var name = def?.Name;
-                var guid = pe.GetGuidSafe();
+                var guid = pe.SafeGuid;
 
                 var identifier = new ParameterIdentifier
                 {
                     Guid = guid,
                     Name = name,
-                    Id = guid == null ? pe.Id.GetElementIdValue() : (long?)null
+                    Id = guid == null ? pe.Id.Value : (long?)null
                 };
 
                 if (!dict.TryGetValue(identifier, out var info))

@@ -261,7 +261,7 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void GetAvailableParameters_ReturnsBuiltInAndProject()
+        public void AvailableParameters_ReturnsBuiltInAndProject()
         {
             BuiltInParameterCollector.ClearCache();
             BuiltInParameterCollector.FileSystem = new InMemoryFileSystem();
@@ -283,7 +283,7 @@ namespace RevitExtensions.Tests
             pe.Categories.Add(BuiltInCategory.GenericModel);
             doc.AddElement(pe);
 
-            var parameters = doc.GetAvailableParameters();
+            var parameters = doc.AvailableParameters;
 
             Assert.Contains(parameters.Keys, k => k.ToStableRepresentation() == "-1;Bip");
             Assert.Contains(parameters.Keys, k => k.Name == "Proj");
@@ -363,7 +363,7 @@ namespace RevitExtensions.Tests
             var id = doc.LookupParameterId(identifier);
 
             Assert.NotNull(id);
-            Assert.Equal(pe.Id.GetElementIdValue(), id.Id);
+            Assert.Equal(pe.Id.Value, id.Id);
         }
 
         [Fact]
@@ -390,7 +390,7 @@ namespace RevitExtensions.Tests
             var id = doc.LookupParameterId(identifier);
 
             Assert.NotNull(id);
-            Assert.Equal(pe.Id.GetElementIdValue(), id.Id);
+            Assert.Equal(pe.Id.Value, id.Id);
         }
 
         [Fact]

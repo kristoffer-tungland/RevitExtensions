@@ -7,19 +7,24 @@ namespace RevitExtensions
     /// </summary>
     public static class ParameterDefinitionExtensions
     {
-        /// <summary>
-        /// Gets the parameter data type as a <see cref="ForgeTypeId"/> for all Revit versions.
-        /// </summary>
-        /// <param name="definition">The parameter definition.</param>
-        /// <returns>The data type identifier.</returns>
-        public static ForgeTypeId GetDataType(this Definition definition)
+        extension (Definition definition)
         {
+            /// <summary>
+            /// Gets the parameter data type as a <see cref="ForgeTypeId"/> for all Revit versions.
+            /// </summary>
+            /// <value>The data type identifier.</value>
+            public ForgeTypeId DataType
+            {
+                get
+                {
 #if REVIT2021_OR_LESS
-            return definition.ParameterType.ToForgeTypeId();
+                    return definition.ParameterType.ToForgeTypeId();
 #else
-            // For newer APIs this instance method already exists.
-            return definition.GetDataType();
+                    // For newer APIs this instance method already exists.
+                    return definition.GetDataType();
 #endif
+                }
+            }
         }
     }
 }

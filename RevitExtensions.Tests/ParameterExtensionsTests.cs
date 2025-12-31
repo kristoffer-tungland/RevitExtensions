@@ -28,7 +28,7 @@ namespace RevitExtensions.Tests
             var param = element.GetParameter(ParameterIdentifier.Parse("7"));
 
             Assert.NotNull(param);
-            Assert.Equal(7L, param.Id.GetElementIdValue());
+            Assert.Equal(7L, param.Id.Value);
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace RevitExtensions.Tests
             var param = element.GetParameter(ParameterIdentifier.Parse("9"));
 
             Assert.NotNull(param);
-            Assert.Equal(9L, param.Id.GetElementIdValue());
+            Assert.Equal(9L, param.Id.Value);
             Assert.Same(type.Parameters[0], param);
         }
 
@@ -77,7 +77,7 @@ namespace RevitExtensions.Tests
         public void LookupParameter_GuidNotFound_FallsBackToName()
         {
             var source = new Parameter(Guid.NewGuid()) { Definition = { Name = "Foo" } };
-            var identifier = source.ToIdentifier();
+            var identifier = source.Identifier;
 
             var element = new Element(new ElementId(3));
             element.Parameters.Add(new Parameter("Foo"));
@@ -92,7 +92,7 @@ namespace RevitExtensions.Tests
         public void GetParameter_GuidNotFound_ReturnsNull()
         {
             var source = new Parameter(Guid.NewGuid()) { Definition = { Name = "Foo" } };
-            var identifier = source.ToIdentifier();
+            var identifier = source.Identifier;
 
             var element = new Element(new ElementId(6));
             element.Parameters.Add(new Parameter("Foo"));
@@ -106,7 +106,7 @@ namespace RevitExtensions.Tests
         public void LookupParameter_IdNotFound_FallsBackToName()
         {
             var source = new Parameter(new ElementId(8)) { Definition = { Name = "Bar" } };
-            var identifier = source.ToIdentifier();
+            var identifier = source.Identifier;
 
             var element = new Element(new ElementId(4));
             element.Parameters.Add(new Parameter("Bar"));
@@ -123,7 +123,7 @@ namespace RevitExtensions.Tests
             var parameter = new Parameter("A") { StorageType = StorageType.String };
             parameter.Set("foo");
 
-            var value = parameter.GetParameterValue();
+            var value = parameter.Value;
 
             Assert.Equal("foo", value);
         }
@@ -222,7 +222,7 @@ namespace RevitExtensions.Tests
             var result = parameter.TrySetParameterValue("foo", out var reason);
 
             Assert.False(result);
-            Assert.Equal(EditStatus.OwnedByOtherUser.ToFriendlyString(), reason);
+            Assert.Equal(EditStatus.OwnedByOtherUser.FriendlyName, reason);
         }
 
         [Fact]
@@ -236,7 +236,7 @@ namespace RevitExtensions.Tests
             var result = parameter.TrySetParameterValue("foo", out var reason);
 
             Assert.False(result);
-            Assert.Equal(EditStatus.ModelLocked.ToFriendlyString(), reason);
+            Assert.Equal(EditStatus.ModelLocked.FriendlyName, reason);
         }
 
         [Fact]
@@ -250,7 +250,7 @@ namespace RevitExtensions.Tests
             var result = parameter.TrySetParameterValue("foo", out var reason);
 
             Assert.False(result);
-            Assert.Equal(EditStatus.LinkedModel.ToFriendlyString(), reason);
+            Assert.Equal(EditStatus.LinkedModel.FriendlyName, reason);
         }
 
         [Fact]
@@ -318,7 +318,7 @@ namespace RevitExtensions.Tests
         {
             var source = new Parameter(new ElementId(11)) { Definition = { Name = "Baz" }, StorageType = StorageType.String };
             // leave value null
-            var identifier = source.ToIdentifier();
+            var identifier = source.Identifier;
 
             var element = new Element(new ElementId(5));
             element.Parameters.Add(source);
@@ -335,7 +335,7 @@ namespace RevitExtensions.Tests
         public void GetParameterValue_NullValue_ReturnsNull()
         {
             var source = new Parameter(new ElementId(12)) { Definition = { Name = "Qux" }, StorageType = StorageType.String };
-            var identifier = source.ToIdentifier();
+            var identifier = source.Identifier;
 
             var element = new Element(new ElementId(6));
             element.Parameters.Add(source);
@@ -401,7 +401,7 @@ namespace RevitExtensions.Tests
             var parameter = new Parameter("F") { StorageType = StorageType.Integer };
             parameter.Set(5);
 
-            var detailed = parameter.GetValueDetailed();
+            var detailed = parameter.ValueDetailed;
 
             Assert.Equal(5, detailed.Value);
             Assert.Equal(parameter.AsValueString(), detailed.ValueString);
@@ -435,7 +435,7 @@ namespace RevitExtensions.Tests
             var parameter = new Parameter(BuiltInParameter.ELEM_PARTITION_PARAM) { StorageType = StorageType.ElementId };
             parameter.Set(new ElementId(42));
 
-            var detailed = parameter.GetValueDetailed();
+            var detailed = parameter.ValueDetailed;
 
             Assert.Equal(ParameterValueType.Workset, detailed.ValueType);
         }

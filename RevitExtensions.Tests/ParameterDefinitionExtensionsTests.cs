@@ -8,11 +8,11 @@ namespace RevitExtensions.Tests
     public class ParameterDefinitionExtensionsTests
     {
         [Fact]
-        public void GetDataType_ReturnsMappedForgeTypeId()
+        public void DataType_ReturnsMappedForgeTypeId()
         {
             var def = new Definition { ParameterType = ParameterType.Text };
 
-            var id = def.GetDataType();
+            var id = def.DataType;
 
             Assert.Equal(SpecTypeId.String.Text.TypeId, id.TypeId);
         }

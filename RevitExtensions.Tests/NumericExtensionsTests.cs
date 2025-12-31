@@ -12,7 +12,7 @@ namespace RevitExtensions.Tests
             int value = 5;
             var id = value.ToElementId();
 
-            Assert.Equal(5L, id.GetElementIdValue());
+            Assert.Equal(5L, id.Value);
         }
 
         [Fact]
@@ -21,7 +21,7 @@ namespace RevitExtensions.Tests
             long value = 7;
             var id = value.ToElementId();
 
-            Assert.Equal(7L, id.GetElementIdValue());
+            Assert.Equal(7L, id.Value);
         }
     }
 }

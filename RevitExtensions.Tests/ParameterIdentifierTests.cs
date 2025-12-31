@@ -58,59 +58,59 @@ namespace RevitExtensions.Tests
         }
 
         [Fact]
-        public void ToIdentifier_Guid_ReturnsIdentifierWithGuid()
+        public void Identifier_Guid_ReturnsIdentifierWithGuid()
         {
             var guid = Guid.NewGuid();
             var parameter = new Parameter(guid);
 
-            var id = parameter.ToIdentifier();
+            var id = parameter.Identifier;
 
             Assert.Equal(guid, id.Guid);
-            Assert.Equal(guid.ToString() + ";", parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal(guid.ToString() + ";", parameter.Identifier.ToStableRepresentation());
         }
 
         [Fact]
-        public void ToIdentifier_BuiltInParameter_ReturnsIdentifier()
+        public void Identifier_BuiltInParameter_ReturnsIdentifier()
         {
             var parameter = new Parameter((BuiltInParameter)(-10));
 
-            var id = parameter.ToIdentifier();
+            var id = parameter.Identifier;
 
             Assert.Equal((BuiltInParameter)(-10), id.BuiltInParameter);
             Assert.Equal(parameter.Definition.Name, id.Name);
-            Assert.Equal("-10;" + parameter.Definition.Name, parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal("-10;" + parameter.Definition.Name, parameter.Identifier.ToStableRepresentation());
         }
 
         [Fact]
-        public void ToIdentifier_Name_ReturnsIdentifier()
+        public void Identifier_Name_ReturnsIdentifier()
         {
             var parameter = new Parameter("Foo");
 
-            var id = parameter.ToIdentifier();
+            var id = parameter.Identifier;
 
             Assert.Equal("Foo", id.Name);
-            Assert.Equal("Foo", parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal("Foo", parameter.Identifier.ToStableRepresentation());
         }
 
         [Fact]
-        public void ToIdentifier_Id_ReturnsIdentifier()
+        public void Identifier_Id_ReturnsIdentifier()
         {
             var parameter = new Parameter(new ElementId(5));
 
-            var id = parameter.ToIdentifier();
+            var id = parameter.Identifier;
 
             Assert.Equal(5L, id.Id);
-            Assert.Equal("5", parameter.ToIdentifier().ToStableRepresentation());
+            Assert.Equal("5", parameter.Identifier.ToStableRepresentation());
         }
 
         [Fact]
-        public void ToIdentifier_GuidWithName_IncludesName()
+        public void Identifier_GuidWithName_IncludesName()
         {
             var guid = Guid.NewGuid();
             var parameter = new Parameter(guid);
             parameter.Definition.Name = "Foo";
 
-            var id = parameter.ToIdentifier();
+            var id = parameter.Identifier;
 
             Assert.Equal(guid, id.Guid);
             Assert.Equal("Foo", id.Name);

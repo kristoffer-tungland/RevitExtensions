@@ -70,8 +70,8 @@ namespace RevitExtensions.Tests
             element.SetRoom(room, phase);
             element.SetSpace(spacePoint, phase);
 
-            var roomIds = element.GetStoredRoomIds();
-            var spacePoints = element.GetStoredSpacePoints();
+            var roomIds = element.StoredRoomIds;
+            var spacePoints = element.StoredSpacePoints;
 
             Assert.Single(roomIds);
             Assert.Equal(room.Id, roomIds[phase]);
@@ -79,7 +79,7 @@ namespace RevitExtensions.Tests
             Assert.Single(spacePoints);
             Assert.Equal(spacePoint, spacePoints[phase]);
 
-            Assert.True(element.HasStoredRoomOrSpace());
+            Assert.True(element.HasStoredRoomOrSpace);
         }
     }
 }

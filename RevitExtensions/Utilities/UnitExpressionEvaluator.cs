@@ -32,13 +32,13 @@ namespace RevitExtensions.Utilities
             var doc = parameter?.Element?.Document
                 ?? throw new InvalidOperationException("Parameter must belong to a document.");
 #if REVIT2021_OR_LESS
-            var spec = parameter.Definition.GetDataType();
+            var spec = parameter.Definition.DataType;
             if (spec == null || spec.Empty())
                 spec = SpecTypeId.Number.Length;
             var fo = doc.GetUnits().GetFormatOptions(spec.ToUnitType());
             var displayUnitId = fo.DisplayUnits.ToForgeTypeId();
 #else
-            var spec = parameter.Definition.GetDataType();
+            var spec = parameter.Definition.DataType;
             if (spec == null || spec.Empty())
                 spec = SpecTypeId.Length;
             var fo = doc.GetUnits().GetFormatOptions(spec);
